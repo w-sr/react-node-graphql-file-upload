@@ -1,3 +1,4 @@
+import { useMutation } from "@apollo/client";
 import {
   Autocomplete,
   Box,
@@ -5,16 +6,21 @@ import {
   DialogContent,
   TextField,
 } from "@mui/material";
-import { Button } from "../../components/common/Button";
 import { useFormik } from "formik";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import * as Yup from "yup";
+import { Button } from "../../components/common/Button";
 import CustomSnackbar, { CustomSnackbarProps } from "../../components/Snackbar";
+import { parseErrorMessage } from "../../graphql/helper";
+import {
+  CREATE_PUBLIC_URL,
+  DELETE_FILE,
+  UPDATE_FILE,
+} from "../../graphql/mutations/files";
+import { GET_FILES } from "../../graphql/quries/files";
+import { GET_TAGS } from "../../graphql/quries/tags";
 import { FileModel } from "../../graphql/type";
 import { copyTextToClipboard } from "../../utils/common";
-import { useMutation } from "@apollo/client";
-import { parseErrorMessage } from "../../graphql/helper";
-import { UPDATE_FILE } from "../../graphql/mutations/files";
 
 type Props = {
   onClose: () => void;
@@ -30,13 +36,14 @@ const FormSchema = Yup.object().shape({
     .max(35, "Name must be up to 35 letters"),
 });
 
-const FileModal = ({ onClose, open, file, tags }: Props) => {
+const FileModal = ({ onClose, open, file, tags = [] }: Props) => {
   const [isCopied, setIsCopied] = useState(false);
   const [snackBarDetails, setSnackBar] = useState<CustomSnackbarProps>({});
 
   const [updateFile] = useMutation(UPDATE_FILE, {
     onCompleted: (res) => {
       if (res.updateFile) {
+        onClose();
         setSnackBar({
           open: true,
           message: "Successfully updated",
@@ -53,30 +60,91 @@ const FileModal = ({ onClose, open, file, tags }: Props) => {
         severity: "error",
       });
     },
+    refetchQueries: [GET_FILES, GET_TAGS],
+  });
+
+  const [deleteFile] = useMutation(DELETE_FILE, {
+    onCompleted: (res) => {
+      if (res.deleteFile) {
+        onClose();
+        setSnackBar({
+          open: true,
+          message: "Successfully deleted",
+          onClose: () => setSnackBar({}),
+          severity: "success",
+        });
+      }
+    },
+    onError: (err) => {
+      setSnackBar({
+        open: true,
+        message: parseErrorMessage(err),
+        onClose: () => setSnackBar({}),
+        severity: "error",
+      });
+    },
+    refetchQueries: [GET_FILES],
+  });
+
+  const [createPublicUrl] = useMutation(CREATE_PUBLIC_URL, {
+    onCompleted: (res) => {
+      if (res.createPublicUrl) {
+        setSnackBar({
+          open: true,
+          message: "Successfully created",
+          onClose: () => setSnackBar({}),
+          severity: "success",
+        });
+      }
+    },
+    onError: (err) => {
+      setSnackBar({
+        open: true,
+        message: parseErrorMessage(err),
+        onClose: () => setSnackBar({}),
+        severity: "error",
+      });
+    },
+    refetchQueries: [GET_FILES],
   });
 
   const formik = useFormik({
     initialValues: {
-      name: file.name,
-      tags: file.tags,
-      publicUrl: file.publicUrl,
+      name: "",
+      tags: [],
+      publicUrl: "",
     },
     validationSchema: FormSchema,
     onSubmit: async (values) => {
-      console.log(values);
-      // await updateFile({
-      //   variables: {
-      //     _id: file._id,
-      //     input: {
-      //       name: values.name,
-      //       tags: values.tags,
-      //     },
-      //   },
-      // });
+      await updateFile({
+        variables: {
+          _id: file._id,
+          input: {
+            name: values.name,
+            tags: values.tags,
+          },
+        },
+      });
     },
   });
 
+  const getTags = useCallback(
+    () => (file.tags ? file.tags.map((tag) => tag.name) : []),
+    [file]
+  );
+
   const { values, setFieldValue, touched, errors } = formik;
+
+  useEffect(() => {
+    if (Object.keys(file).length > 1) {
+      setFieldValue("name", file.name);
+      setFieldValue("tags", getTags());
+      setFieldValue(
+        "publicUrl",
+        `${window.location.origin}/g/${file.publicUrl}`
+      );
+    }
+  }, [file, setFieldValue, getTags]);
 
   const handleCopyClick = () => {
     copyTextToClipboard(values.publicUrl)
@@ -91,6 +159,22 @@ const FileModal = ({ onClose, open, file, tags }: Props) => {
       });
   };
 
+  const createUrl = () => {
+    createPublicUrl({
+      variables: {
+        _id: file._id,
+      },
+    });
+  };
+
+  const onDelete = useCallback(() => {
+    deleteFile({
+      variables: {
+        _id: file._id,
+      },
+    });
+  }, [file]);
+
   const modalClose = () => {
     formik.resetForm();
     onClose();
@@ -101,7 +185,7 @@ const FileModal = ({ onClose, open, file, tags }: Props) => {
       <Dialog
         open={open}
         sx={{ "& .MuiDialog-paper": { minWidth: 500 } }}
-        maxWidth="sm"
+        maxWidth="md"
         aria-labelledby="file-dialog"
       >
         <DialogContent>
@@ -123,7 +207,7 @@ const FileModal = ({ onClose, open, file, tags }: Props) => {
                 id="tags"
                 options={tags ?? []}
                 freeSolo
-                defaultValue={[...file.tags]}
+                defaultValue={[...(getTags() ?? [])]}
                 value={values.tags}
                 onChange={(_: any, newValue: string[]) =>
                   setFieldValue("tags", newValue)
@@ -158,12 +242,19 @@ const FileModal = ({ onClose, open, file, tags }: Props) => {
             )}
             <Box mt={5} display="flex" justifyContent="flex-end">
               {!file.public && (
-                <Button variant="contained" type="submit">
+                <Button variant="contained" onClick={createUrl}>
                   Get Public URL
                 </Button>
               )}
               <Button variant="contained" type="submit" sx={{ marginLeft: 2 }}>
-                Save
+                Update
+              </Button>
+              <Button
+                variant="contained"
+                onClick={onDelete}
+                sx={{ marginLeft: 2 }}
+              >
+                Delete
               </Button>
               <Button onClick={modalClose} autoFocus sx={{ marginLeft: 2 }}>
                 Cancel

@@ -1,4 +1,4 @@
-import { useMutation } from "@apollo/client";
+import { useMutation, useSubscription } from "@apollo/client";
 import {
   Box,
   Dialog,
@@ -7,7 +7,9 @@ import {
   DialogTitle,
 } from "@mui/material";
 import { useEffect } from "react";
-import { CREATE_FILE } from "../graphql/mutations/files";
+import { CREATE_FILE, FILE_UPLOAD_PROGRESS } from "../graphql/mutations/files";
+import { GET_FILES } from "../graphql/quries/files";
+import { MAX_FILE_SIZE } from "../utils/common";
 import { Button } from "./common/Button";
 import ProgressBar from "./ProgressBar";
 
@@ -18,16 +20,55 @@ type FileUploadProps = {
 };
 
 const FileUploadStatus = ({ show, files, clear }: FileUploadProps) => {
-  const [uploadFiles] = useMutation(CREATE_FILE);
+  const { data } = useSubscription(FILE_UPLOAD_PROGRESS, {
+    variables: {
+      sessionId: "1",
+    },
+  });
+
+  console.log(data);
+
+  const [uploadFiles] = useMutation(CREATE_FILE, {
+    onCompleted: (res) => {
+      if (res.createFile) {
+        clear();
+      }
+    },
+    refetchQueries: [GET_FILES],
+  });
 
   useEffect(() => {
-    if (show && files.length > 0)
-      uploadFiles({
-        variables: {
-          input: files,
-        },
-      });
+    if (show && files.length > 0) {
+      const filteredFiles = files.filter(
+        (file) =>
+          file.size < MAX_FILE_SIZE && file.type.toLowerCase() === "image/gif"
+      );
+      if (filteredFiles.length > 0) {
+        uploadFiles({
+          variables: {
+            input: filteredFiles,
+          },
+        });
+      }
+    }
   }, [show, files, uploadFiles]);
+
+  const renderStatusBar = (file: File) => {
+    if (file.type.toLowerCase() !== "image/gif") {
+      return (
+        <Box sx={{ fontSize: "0.75rem", color: "red" }} mt={1}>
+          You can only upload gifs
+        </Box>
+      );
+    } else if (file.size > MAX_FILE_SIZE) {
+      return (
+        <Box sx={{ fontSize: "0.75rem", color: "red" }} mt={1}>
+          You can upload up to 10 MB
+        </Box>
+      );
+    }
+    return <ProgressBar value={0} />;
+  };
 
   return (
     <Dialog
@@ -49,7 +90,7 @@ const FileUploadStatus = ({ show, files, clear }: FileUploadProps) => {
         {files.map((file: File) => (
           <Box key={file.name} mb={2}>
             <Box>{file.name}</Box>
-            <ProgressBar value={0} />
+            {renderStatusBar(file)}
           </Box>
         ))}
       </DialogContent>

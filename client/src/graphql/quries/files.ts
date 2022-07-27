@@ -1,25 +1,50 @@
 import { gql, useQuery } from "@apollo/client";
 import { FileModel, QueryHookResult } from "../type";
 
+// export const GET_FILES = gql`
+//   query GetFiles($filters: FilterFileInput!) {
+//     getFiles(filters: $filters) {
+//       files {
+//         file {
+//           _id
+//           name
+//           tags {
+//             _id
+//             name
+//           }
+//           public
+//           publicUrl
+//           url
+//         }
+//         content
+//       }
+//       total
+//     }
+//   }
+// `;
+
 export const GET_FILES = gql`
-  query getFiles($filter: FileInputFilter) {
-    files(filters: $filter) {
+  query GetFiles($filters: FilterFileInput!) {
+    getFiles(filters: $filters) {
       files {
         _id
         name
-        tags
+        tags {
+          _id
+          name
+        }
         public
         publicUrl
         url
       }
-      count
+      total
     }
   }
 `;
 
 export const GET_FILE = gql`
-  query getFile($input: FileInput!) {
-    file(input: $input) {
+  query GetFile($input: FileInput!) {
+    getFile(input: $input) {
       _id
       name
       tags

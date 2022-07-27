@@ -31,33 +31,27 @@ const FileUploadArea = ({ submit }: Props) => {
   return (
     <Box
       sx={{
-        position: "absolute",
-        textAlign: "center",
-        width: "100%",
-        height: "calc(100% - 64px)",
+        width: "80%",
+        height: 100,
+        margin: "20px auto",
+        borderStyle: "dotted",
       }}
       {...getRootProps()}
     >
       <Box
         sx={{
-          display: overlayVisible ? "block" : "none",
-          position: "relative",
-          background: "grey",
+          background: overlayVisible ? "grey" : "transparent",
+
           width: "100%",
           height: "100%",
         }}
+        display="flex"
+        alignContent={"center"}
+        justifyContent={"center"}
       >
-        <Box
-          sx={{
-            margin: 0,
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-          }}
-        >
-          <input {...getInputProps()} />
-          <p>Drag image file to this area to upload.</p>
+        <input {...getInputProps()} />
+        <Box display={"flex"} alignItems="center">
+          Drag image file to this area to upload.
         </Box>
       </Box>
     </Box>

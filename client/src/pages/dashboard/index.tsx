@@ -1,5 +1,5 @@
 import { Box, TextField } from "@mui/material";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import ConfirmModal from "../../components/ConfirmModal";
 import FileUploadArea from "../../components/FileUploadArea";
@@ -8,7 +8,11 @@ import FileModal from "./fileModal";
 import FileUploadStatus from "../../components/FileUploadStatus";
 import EmptyCard from "../../components/EmptyCard";
 import { useQueryTag } from "../../graphql/quries/tags";
-import { Tag } from "../../graphql/type";
+import { FileModel, Tag } from "../../graphql/type";
+import { GET_FILES, useQueryFiles } from "../../graphql/quries/files";
+import { useQuery } from "@apollo/client";
+import FileCard from "../../components/FileCard";
+import Pagination from "../../components/Pagination";
 
 const Dashboard = () => {
   const [files, setFiles] = useState<File[]>([]);
@@ -17,10 +21,21 @@ const Dashboard = () => {
   const [page, setPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
   const [filter, setFilter] = useState<string>("");
+  const [currentId, setCurrentId] = useState<string>("");
 
   const { data, loading } = useQueryTag();
+  const { data: filesArray, refetch } = useQuery(GET_FILES, {
+    variables: {
+      filters: {
+        name: "",
+        page,
+        pageSize,
+      },
+    },
+  });
 
   const tags = data?.map((x: Tag) => x.name);
+  const rows = filesArray?.getFiles.files;
 
   const onConfirm = () => console.log("xxx");
 
@@ -31,9 +46,21 @@ const Dashboard = () => {
     []
   );
 
+  const onEdit = (_id: string) => setCurrentId(_id);
+
   const uploadFiles = useCallback((data: File[]) => {
     setFiles(data);
   }, []);
+
+  useEffect(() => {
+    refetch({
+      filters: {
+        name: filter,
+        page,
+        pageSize,
+      },
+    });
+  }, [filter]);
 
   return (
     <Box flexGrow={1}>
@@ -41,7 +68,7 @@ const Dashboard = () => {
       <FileUploadArea submit={uploadFiles} />
 
       {/* Search area */}
-      <Box sx={{ flexGrow: 1 }} mt={5} mx={5}>
+      <Box sx={{ flexGrow: 1, margin: "40px auto" }} maxWidth={1200}>
         <TextField
           fullWidth
           placeholder="Search your GIFs by name or tags..."
@@ -50,25 +77,37 @@ const Dashboard = () => {
       </Box>
 
       {/* File List */}
-      <Box sx={{ flexGrow: 1 }} mt={5}>
-        <EmptyCard content="No Uploaded Files!" />
+      <Box
+        sx={{
+          flexGrow: 1,
+          margin: "40px auto 0",
+          background: "white",
+          borderRadius: 2,
+          padding: 2,
+        }}
+        display="flex"
+        flexWrap={"wrap"}
+        maxWidth={1200}
+      >
+        {rows && rows.length > 0 ? (
+          rows.map((row: FileModel) => (
+            <Box key={row.name} m={1}>
+              <FileCard file={row} edit={onEdit} />
+            </Box>
+          ))
+        ) : (
+          <EmptyCard content="No Files!" />
+        )}
+        <Pagination />
       </Box>
 
       {/* File detail modal */}
-      {/* <FileModal
-        open={true}
-        onClose={() => console.log(false)}
+      <FileModal
+        open={Boolean(currentId)}
+        onClose={() => setCurrentId("")}
         tags={tags}
-        file={{
-          _id: "1111",
-          name: "xxxx",
-          tags: [],
-          public: true,
-          publicUrl: "xxx",
-          url: "xxx",
-          user: "xxx",
-        }}
-      /> */}
+        file={rows?.find((r: FileModel) => r._id === currentId) ?? {}}
+      />
 
       {/* Upload progress modal */}
       <FileUploadStatus

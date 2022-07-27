@@ -11,7 +11,12 @@ export default class FileModel {
     return file;
   }
 
-  async getAll(data: FilterFileInput, _id: ObjectId): Promise<FilesPayload> {
+  //Comment change into userId
+  async getAll(
+    data: FilterFileInput,
+    _id: ObjectId
+    // ): Promise<{ files: File[]; total: number }> {
+  ): Promise<FilesPayload> {
     const { page, pageSize, name } = data;
 
     const files = await FileMongooseModel.aggregate([
@@ -28,6 +33,9 @@ export default class FileModel {
           $and: [
             {
               user: { $eq: _id },
+            },
+            {
+              isDeleted: { $eq: false },
             },
             {
               $or: [
@@ -48,15 +56,16 @@ export default class FileModel {
           ],
         },
       },
-    ]);
+    ]).sort({ createdAt: "desc" });
 
-    const retTotal = files[0].total > 0 ? files[0].total[0].count : 0;
+    const retTotal = files[0].total.length > 0 ? files[0].total[0].count : 0;
 
     return { files: files[0].files, total: retTotal };
   }
 
   async create(filename: string, url: string, _id: ObjectId): Promise<File> {
     const query = {
+      //Comment data
       name: filename,
       user: _id,
       public: false,
@@ -67,39 +76,50 @@ export default class FileModel {
   }
 
   async update(_id: ObjectId, data: UpdateFileInput): Promise<File | null> {
-    const { tags, name } = data;
+    const { tags, name, publicUrl } = data;
 
-    /**
-     * Check if there are newly inputed tags
-     */
-    const existingTags = await TagMongooseModel.find(
-      {
-        name: { $in: [...tags] },
-      },
-      { name: true }
-    );
+    const query: Record<string, any> = {};
+    if (tags) {
+      /**
+       * Check if there are newly inputed tags
+       */
+      const existingTags = await TagMongooseModel.find(
+        {
+          name: { $in: [...tags] },
+        },
+        { name: true }
+      );
 
-    const nonExistingTags = tags
-      .filter((t) => !existingTags.map((ex) => ex.name).includes(t))
-      .map((y) => ({ name: y }));
+      const nonExistingTags = tags
+        .filter((t) => !existingTags.map((ex) => ex.name).includes(t)) //Comment change using find
+        .map((y) => ({ name: y }));
 
-    /**
-     * Create non existing tags
-     */
-    let newIds = [...existingTags.map((e) => e._id)];
-    if (nonExistingTags.length > 0) {
-      const newTags = await TagMongooseModel.create(nonExistingTags);
-      newIds = [...newIds, ...newTags.map((x) => x._id)];
+      /**
+       * Create non existing tags
+       */
+      let newIds = [...existingTags.map((e) => e._id)];
+      if (nonExistingTags.length > 0) {
+        const newTags = await TagMongooseModel.create(nonExistingTags);
+        newIds = [...newIds, ...newTags.map((x) => x._id)];
+      }
+
+      query.tags = newIds;
+    }
+
+    if (name) {
+      query.name = name;
+    }
+
+    if (publicUrl) {
+      query.publicUrl = publicUrl;
+      query.public = true;
     }
 
     const updatedFile = await FileMongooseModel.findOneAndUpdate(
       {
         _id,
       },
-      {
-        name,
-        tags: newIds,
-      },
+      query,
       {
         new: true,
       }

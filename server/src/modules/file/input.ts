@@ -1,6 +1,7 @@
 import { Length } from "class-validator";
 import { Field, InputType, Int, ObjectType } from "type-graphql";
 import { File } from "../../entities";
+import { FileUpload, GraphQLUpload } from "graphql-upload";
 
 // @InputType()
 // export class CreateFileInput {
@@ -16,12 +17,15 @@ import { File } from "../../entities";
 
 @InputType()
 export class UpdateFileInput {
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
   @Length(1, 50)
-  name: string;
+  name?: string;
 
-  @Field(() => [String])
-  tags: string[];
+  @Field(() => [String], { nullable: true })
+  tags?: string[];
+
+  @Field(() => String, { nullable: true })
+  publicUrl?: string;
 }
 
 @InputType()
@@ -37,6 +41,15 @@ export class FilterFileInput {
 }
 
 @ObjectType()
+export class FileContent {
+  @Field(() => File)
+  file: File;
+
+  @Field(() => String)
+  content: Buffer;
+}
+
+@ObjectType()
 export class FilesPayload {
   @Field(() => [File])
   files: File[];
@@ -45,8 +58,23 @@ export class FilesPayload {
   total: number;
 }
 
+// @ObjectType()
+// export class FilesPayload {
+//   @Field(() => [File])
+//   files: FileContent[];
+
+//   @Field(() => Int)
+//   total: number;
+// }
+
 @ObjectType()
 export class CreateFilesPayload {
   @Field(() => Int)
   total: number;
+}
+
+@ObjectType()
+export class ProgressStatus {
+  @Field(() => Int)
+  progress: number;
 }
