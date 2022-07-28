@@ -7,8 +7,12 @@ import {
 import { Length } from "class-validator";
 import { ObjectId } from "mongodb";
 import { Field, ObjectType } from "type-graphql";
-import FileModel from "../modules/file/model";
 import { Tag } from "./tag";
+
+export enum FileContentType {
+  PRIVATE = "private",
+  PUBLIC = "public",
+}
 
 @modelOptions({
   schemaOptions: {

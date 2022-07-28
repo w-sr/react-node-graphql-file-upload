@@ -1,4 +1,4 @@
-import { useMutation, useSubscription } from "@apollo/client";
+import { useMutation } from "@apollo/client";
 import {
   Box,
   Dialog,
@@ -6,8 +6,8 @@ import {
   DialogContent,
   DialogTitle,
 } from "@mui/material";
-import { useEffect } from "react";
-import { CREATE_FILE, FILE_UPLOAD_PROGRESS } from "../graphql/mutations/files";
+import { useEffect, useRef, useState } from "react";
+import { UPLOAD_FILE } from "../graphql/mutations/files";
 import { GET_FILES } from "../graphql/quries/files";
 import { MAX_FILE_SIZE } from "../utils/common";
 import { Button } from "./common/Button";
@@ -16,42 +16,61 @@ import ProgressBar from "./ProgressBar";
 type FileUploadProps = {
   show: boolean;
   files: File[];
-  clear: () => void;
+  close: () => void;
 };
 
-const FileUploadStatus = ({ show, files, clear }: FileUploadProps) => {
-  const { data } = useSubscription(FILE_UPLOAD_PROGRESS, {
-    variables: {
-      sessionId: "1",
-    },
-  });
-
-  console.log(data);
-
-  const [uploadFiles] = useMutation(CREATE_FILE, {
+const FileUploadStatus = ({ show, files, close }: FileUploadProps) => {
+  const currentFile = useRef<string>("");
+  const [current, setCurrent] = useState<string>("");
+  const [progress, setProgress] = useState<Record<string, number>>({});
+  const [uploadFile] = useMutation(UPLOAD_FILE, {
     onCompleted: (res) => {
-      if (res.createFile) {
-        clear();
+      if (res.uploadFile) {
+        // setCurrent(current + 1);
       }
     },
     refetchQueries: [GET_FILES],
+    context: {
+      fetchOptions: {
+        useUpload: true,
+        onProgress: (proEvent: ProgressEvent) => {
+          const pro = { ...progress };
+          pro[currentFile.current] = (proEvent.loaded * 100) / proEvent.total;
+          setProgress(pro);
+        },
+        onAbortPossible: (abortHandler: any) => {
+          console.log(abortHandler);
+        },
+      },
+    },
   });
 
   useEffect(() => {
+    const upload = async (file: File) => {
+      try {
+        await uploadFile({
+          variables: {
+            input: file,
+          },
+        });
+      } catch (error) {
+        console.log(error);
+      }
+    };
     if (show && files.length > 0) {
       const filteredFiles = files.filter(
         (file) =>
           file.size < MAX_FILE_SIZE && file.type.toLowerCase() === "image/gif"
       );
       if (filteredFiles.length > 0) {
-        uploadFiles({
-          variables: {
-            input: filteredFiles,
-          },
-        });
+        for (const file of filteredFiles) {
+          setCurrent(file.name);
+          currentFile.current = file.name;
+          upload(file);
+        }
       }
     }
-  }, [show, files, uploadFiles]);
+  }, [show, files, uploadFile]);
 
   const renderStatusBar = (file: File) => {
     if (file.type.toLowerCase() !== "image/gif") {
@@ -67,7 +86,15 @@ const FileUploadStatus = ({ show, files, clear }: FileUploadProps) => {
         </Box>
       );
     }
-    return <ProgressBar value={0} />;
+    return <ProgressBar value={progress[file.name] ?? 0} />;
+  };
+
+  // console.log("progress", progress);
+
+  const onClose = () => {
+    currentFile.current = "";
+    setProgress({});
+    close();
   };
 
   return (
@@ -96,7 +123,7 @@ const FileUploadStatus = ({ show, files, clear }: FileUploadProps) => {
       </DialogContent>
       <DialogActions>
         <Box mt={5} display="flex" justifyContent="flex-end">
-          <Button onClick={clear} autoFocus sx={{ marginRight: 2 }}>
+          <Button onClick={onClose} autoFocus sx={{ marginRight: 2 }}>
             Clear
           </Button>
         </Box>

@@ -1,30 +1,28 @@
+import { useQuery } from "@apollo/client";
 import { Box, TextField } from "@mui/material";
-import { useCallback, useEffect, useState } from "react";
-
-import ConfirmModal from "../../components/ConfirmModal";
-import FileUploadArea from "../../components/FileUploadArea";
-import CustomSnackbar, { CustomSnackbarProps } from "../../components/Snackbar";
-import FileModal from "./fileModal";
-import FileUploadStatus from "../../components/FileUploadStatus";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import EmptyCard from "../../components/EmptyCard";
+import FileCard from "../../components/FileCard";
+import FileUploadArea from "../../components/FileUploadArea";
+import FileUploadStatus from "../../components/FileUploadStatus";
+import Pagination from "../../components/Pagination";
+import CustomSnackbar, { CustomSnackbarProps } from "../../components/Snackbar";
+import { GET_FILES } from "../../graphql/quries/files";
 import { useQueryTag } from "../../graphql/quries/tags";
 import { FileModel, Tag } from "../../graphql/type";
-import { GET_FILES, useQueryFiles } from "../../graphql/quries/files";
-import { useQuery } from "@apollo/client";
-import FileCard from "../../components/FileCard";
-import Pagination from "../../components/Pagination";
+import FileModal from "./fileModal";
+import debounce from "lodash.debounce";
 
 const Dashboard = () => {
   const [files, setFiles] = useState<File[]>([]);
-  const [confirmModal, setConfirmModal] = useState(false);
   const [snackBarDetails, setSnackBar] = useState<CustomSnackbarProps>({});
-  const [page, setPage] = useState<number>(1);
+  const [page, setPage] = useState<number>(0);
   const [pageSize, setPageSize] = useState<number>(10);
   const [filter, setFilter] = useState<string>("");
   const [currentId, setCurrentId] = useState<string>("");
 
-  const { data, loading } = useQueryTag();
-  const { data: filesArray, refetch } = useQuery(GET_FILES, {
+  const { data } = useQueryTag();
+  const { data: fileList, refetch } = useQuery(GET_FILES, {
     variables: {
       filters: {
         name: "",
@@ -35,9 +33,7 @@ const Dashboard = () => {
   });
 
   const tags = data?.map((x: Tag) => x.name);
-  const rows = filesArray?.getFiles.files;
-
-  const onConfirm = () => console.log("xxx");
+  const rows = fileList?.getFileList.files;
 
   const filterChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,6 +42,8 @@ const Dashboard = () => {
     []
   );
 
+  const debouncedChange = useMemo(() => debounce(filterChange, 500), []);
+
   const onEdit = (_id: string) => setCurrentId(_id);
 
   const uploadFiles = useCallback((data: File[]) => {
@@ -53,6 +51,7 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
+    setFiles([]);
     refetch({
       filters: {
         name: filter,
@@ -60,7 +59,13 @@ const Dashboard = () => {
         pageSize,
       },
     });
-  }, [filter]);
+  }, [filter, page, pageSize]);
+
+  useEffect(() => {
+    return () => {
+      debouncedChange.cancel();
+    };
+  });
 
   return (
     <Box flexGrow={1}>
@@ -72,7 +77,7 @@ const Dashboard = () => {
         <TextField
           fullWidth
           placeholder="Search your GIFs by name or tags..."
-          onChange={filterChange}
+          onChange={debouncedChange}
         />
       </Box>
 
@@ -85,20 +90,31 @@ const Dashboard = () => {
           borderRadius: 2,
           padding: 2,
         }}
-        display="flex"
-        flexWrap={"wrap"}
         maxWidth={1200}
       >
         {rows && rows.length > 0 ? (
-          rows.map((row: FileModel) => (
-            <Box key={row.name} m={1}>
-              <FileCard file={row} edit={onEdit} />
+          <Box display="flex" flexDirection={"column"}>
+            <Box display="flex" flexWrap={"wrap"}>
+              {rows.map((row: FileModel) => (
+                <Box key={row._id} m={1}>
+                  <FileCard file={row} edit={onEdit} />
+                </Box>
+              ))}
             </Box>
-          ))
+            <Pagination
+              total={fileList?.getFileList.total ?? 0}
+              page={page}
+              rowsPerPage={pageSize}
+              setPage={(data) => setPage(data)}
+              setRowsPerPage={(data) => {
+                setPage(0);
+                setPageSize(data);
+              }}
+            />
+          </Box>
         ) : (
           <EmptyCard content="No Files!" />
         )}
-        <Pagination />
       </Box>
 
       {/* File detail modal */}
@@ -113,15 +129,7 @@ const Dashboard = () => {
       <FileUploadStatus
         show={files.length > 0}
         files={files}
-        clear={() => setFiles([])}
-      />
-
-      {/* Confirm modal */}
-      <ConfirmModal
-        open={confirmModal}
-        onClose={() => setConfirmModal(false)}
-        title={"Are you sure to delete this file?"}
-        onConfirm={onConfirm}
+        close={() => setFiles([])}
       />
 
       {/* Snackbar */}

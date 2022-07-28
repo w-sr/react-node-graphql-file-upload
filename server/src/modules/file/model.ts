@@ -11,15 +11,24 @@ export default class FileModel {
     return file;
   }
 
-  //Comment change into userId
+  async getByPublicUrl(publicUrl: string): Promise<File | null> {
+    const file = await FileMongooseModel.findOne({ publicUrl }).exec();
+    return file;
+  }
+
   async getAll(
-    data: FilterFileInput,
-    _id: ObjectId
-    // ): Promise<{ files: File[]; total: number }> {
+    query: FilterFileInput,
+    userId: ObjectId
   ): Promise<FilesPayload> {
-    const { page, pageSize, name } = data;
+    const { page, pageSize, name } = query;
 
     const files = await FileMongooseModel.aggregate([
+      {
+        $match: {
+          user: { $eq: userId },
+          isDeleted: { $eq: false },
+        },
+      },
       {
         $lookup: {
           from: "tags",
@@ -30,25 +39,16 @@ export default class FileModel {
       },
       {
         $match: {
-          $and: [
-            {
-              user: { $eq: _id },
-            },
-            {
-              isDeleted: { $eq: false },
-            },
-            {
-              $or: [
-                { "tags.name": { $eq: name } },
-                { name: { $regex: new RegExp(name, "i") } },
-              ],
-            },
-          ],
+          $or: [{ "tags.name": { $regex: name } }, { name: { $regex: name } }],
         },
       },
       {
         $facet: {
-          files: [{ $skip: (page - 1) * pageSize }, { $limit: +pageSize }],
+          files: [
+            { $sort: { createdAt: -1 } },
+            { $skip: page * pageSize },
+            { $limit: +pageSize },
+          ],
           total: [
             {
               $count: "count",
@@ -56,7 +56,7 @@ export default class FileModel {
           ],
         },
       },
-    ]).sort({ createdAt: "desc" });
+    ]);
 
     const retTotal = files[0].total.length > 0 ? files[0].total[0].count : 0;
 
@@ -64,15 +64,14 @@ export default class FileModel {
   }
 
   async create(filename: string, url: string, _id: ObjectId): Promise<File> {
-    const query = {
-      //Comment data
+    const data = {
       name: filename,
       user: _id,
       public: false,
       url,
     };
-    const createdFile = new FileMongooseModel(query);
-    return createdFile.save();
+    const createdFile = new FileMongooseModel(data).save();
+    return createdFile;
   }
 
   async update(_id: ObjectId, data: UpdateFileInput): Promise<File | null> {
@@ -91,13 +90,14 @@ export default class FileModel {
       );
 
       const nonExistingTags = tags
-        .filter((t) => !existingTags.map((ex) => ex.name).includes(t)) //Comment change using find
+        .filter((tag) => !existingTags.find((ex) => ex.name === tag))
         .map((y) => ({ name: y }));
+
+      let newIds = [...existingTags.map((e) => e._id)];
 
       /**
        * Create non existing tags
        */
-      let newIds = [...existingTags.map((e) => e._id)];
       if (nonExistingTags.length > 0) {
         const newTags = await TagMongooseModel.create(nonExistingTags);
         newIds = [...newIds, ...newTags.map((x) => x._id)];
@@ -131,6 +131,7 @@ export default class FileModel {
   async delete(_id: ObjectId): Promise<File | null> {
     const deletedFile = await FileMongooseModel.findByIdAndUpdate(_id, {
       isDeleted: true,
+      publicUrl: null,
     });
     return deletedFile;
   }

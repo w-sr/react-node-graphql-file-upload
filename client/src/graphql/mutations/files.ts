@@ -16,10 +16,26 @@ export const UPDATE_FILE = gql`
   }
 `;
 
-export const CREATE_FILE = gql`
-  mutation CreateFile($input: [Upload!]!) {
-    createFile(input: $input) {
+export const UPLOAD_FILES = gql`
+  mutation UploadFiles($input: [Upload!]!) {
+    uploadFiles(input: $input) {
       total
+    }
+  }
+`;
+
+export const UPLOAD_FILE = gql`
+  mutation UploadFile($input: Upload!) {
+    uploadFile(input: $input) {
+      _id
+      name
+      tags {
+        _id
+        name
+      }
+      public
+      publicUrl
+      url
     }
   }
 `;
@@ -36,14 +52,6 @@ export const CREATE_PUBLIC_URL = gql`
   mutation CreatePublicUrl($_id: String!) {
     createPublicUrl(_id: $_id) {
       _id
-    }
-  }
-`;
-
-export const FILE_UPLOAD_PROGRESS = gql`
-  subscription UploadProgress($sessionId: String!) {
-    uploadProgress(sessionId: $sessionId) {
-      progress
     }
   }
 `;

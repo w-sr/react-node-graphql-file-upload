@@ -1,31 +1,8 @@
-import { gql, useQuery } from "@apollo/client";
-import { FileModel, QueryHookResult } from "../type";
-
-// export const GET_FILES = gql`
-//   query GetFiles($filters: FilterFileInput!) {
-//     getFiles(filters: $filters) {
-//       files {
-//         file {
-//           _id
-//           name
-//           tags {
-//             _id
-//             name
-//           }
-//           public
-//           publicUrl
-//           url
-//         }
-//         content
-//       }
-//       total
-//     }
-//   }
-// `;
+import { gql } from "@apollo/client";
 
 export const GET_FILES = gql`
   query GetFiles($filters: FilterFileInput!) {
-    getFiles(filters: $filters) {
+    getFileList(filters: $filters) {
       files {
         _id
         name
@@ -43,8 +20,8 @@ export const GET_FILES = gql`
 `;
 
 export const GET_FILE = gql`
-  query GetFile($input: FileInput!) {
-    getFile(input: $input) {
+  query GetFile($_id: String!) {
+    getFile(_id: $_id) {
       _id
       name
       tags
@@ -55,16 +32,10 @@ export const GET_FILE = gql`
   }
 `;
 
-export const useQueryFile = (
-  id: string | undefined
-): QueryHookResult<FileModel> => {
-  const skip = !id;
-  const variables = { id };
-  const { data, loading } = useQuery(GET_FILE, { variables, skip });
-  return { data, loading };
-};
-
-export const useQueryFiles = (): QueryHookResult<FileModel[]> => {
-  const { data, loading, refetch } = useQuery(GET_FILES);
-  return { data: data?.files, loading, refetch };
-};
+export const GET_FILE_CONTENT = gql`
+  query GetFileContent($data: String!, $type: String!) {
+    getFileContent(data: $data, type: $type) {
+      content
+    }
+  }
+`;

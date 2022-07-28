@@ -20,7 +20,8 @@ import {
 import { GET_FILES } from "../../graphql/quries/files";
 import { GET_TAGS } from "../../graphql/quries/tags";
 import { FileModel } from "../../graphql/type";
-import { copyTextToClipboard } from "../../utils/common";
+import { CopyToClipboard } from "react-copy-to-clipboard";
+import ConfirmModal from "../../components/ConfirmModal";
 
 type Props = {
   onClose: () => void;
@@ -37,7 +38,9 @@ const FormSchema = Yup.object().shape({
 });
 
 const FileModal = ({ onClose, open, file, tags = [] }: Props) => {
+  const [error, setError] = useState<string>("");
   const [isCopied, setIsCopied] = useState(false);
+  const [confirmModal, setConfirmModal] = useState(false);
   const [snackBarDetails, setSnackBar] = useState<CustomSnackbarProps>({});
 
   const [updateFile] = useMutation(UPDATE_FILE, {
@@ -66,6 +69,7 @@ const FileModal = ({ onClose, open, file, tags = [] }: Props) => {
   const [deleteFile] = useMutation(DELETE_FILE, {
     onCompleted: (res) => {
       if (res.deleteFile) {
+        setConfirmModal(false);
         onClose();
         setSnackBar({
           open: true,
@@ -146,19 +150,6 @@ const FileModal = ({ onClose, open, file, tags = [] }: Props) => {
     }
   }, [file, setFieldValue, getTags]);
 
-  const handleCopyClick = () => {
-    copyTextToClipboard(values.publicUrl)
-      .then(() => {
-        setIsCopied(true);
-        setTimeout(() => {
-          setIsCopied(false);
-        }, 2000);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  };
-
   const createUrl = () => {
     createPublicUrl({
       variables: {
@@ -185,11 +176,16 @@ const FileModal = ({ onClose, open, file, tags = [] }: Props) => {
       <Dialog
         open={open}
         sx={{ "& .MuiDialog-paper": { minWidth: 500 } }}
-        maxWidth="md"
+        maxWidth="sm"
         aria-labelledby="file-dialog"
       >
         <DialogContent>
-          <form onSubmit={formik.handleSubmit}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              formik.handleSubmit();
+            }}
+          >
             <Box my={2}>
               <TextField
                 fullWidth
@@ -199,6 +195,7 @@ const FileModal = ({ onClose, open, file, tags = [] }: Props) => {
                 value={values.name}
                 onChange={(e) => setFieldValue("name", e.target.value)}
                 error={touched.name && Boolean(errors.name)}
+                helperText={errors.name}
               />
             </Box>
             <Box my={2}>
@@ -209,35 +206,71 @@ const FileModal = ({ onClose, open, file, tags = [] }: Props) => {
                 freeSolo
                 defaultValue={[...(getTags() ?? [])]}
                 value={values.tags}
-                onChange={(_: any, newValue: string[]) =>
-                  setFieldValue("tags", newValue)
-                }
+                onChange={(_: any, newValue: string[]) => {
+                  setFieldValue("tags", newValue);
+                  setError("");
+                }}
                 renderInput={(params) => (
                   <TextField
                     {...params}
                     label="Tags"
                     placeholder="Add a new tag"
+                    inputProps={{
+                      ...params.inputProps,
+                      onKeyDown: (event) => {
+                        if (event.key === "Enter") {
+                          const { value } = event.target;
+                          if (value.trim() === "") {
+                            setError("Please input correct tag name");
+                            event.stopPropagation();
+                          } else if (!/^[A-Za-z0-9]*$/.test(value)) {
+                            setError("Please input correct tag name");
+                            event.stopPropagation();
+                          }
+                          event.preventDefault();
+                        }
+                      },
+                    }}
+                    error={Boolean(error)}
+                    helperText={error}
                   />
                 )}
               />
             </Box>
             {file.public && (
-              <Box my={2} display="flex">
-                <TextField
-                  fullWidth
-                  id="publicUrl"
-                  name="publicUrl"
-                  label="Public URL"
-                  value={values.publicUrl}
-                  sx={{ width: "80%" }}
-                  disabled
-                />
-                <Button
-                  onClick={handleCopyClick}
-                  sx={{ marginLeft: 1, textTransform: "none" }}
+              <Box my={2} display="flex" sx={{ position: "relative" }}>
+                <CopyToClipboard
+                  text={values.publicUrl}
+                  onCopy={() => {
+                    setIsCopied(true);
+                    setTimeout(() => {
+                      setIsCopied(false);
+                    }, 2000);
+                  }}
                 >
-                  {isCopied ? "Copied!" : "Copy"}
-                </Button>
+                  <TextField
+                    fullWidth
+                    id="publicUrl"
+                    name="publicUrl"
+                    label="Public URL"
+                    value={values.publicUrl}
+                    disabled
+                  />
+                </CopyToClipboard>
+                {isCopied && (
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: 20,
+                      right: 10,
+                      background: "pink",
+                      padding: 2,
+                      borderRadius: 2,
+                    }}
+                  >
+                    Copied!
+                  </Box>
+                )}
               </Box>
             )}
             <Box mt={5} display="flex" justifyContent="flex-end">
@@ -251,7 +284,7 @@ const FileModal = ({ onClose, open, file, tags = [] }: Props) => {
               </Button>
               <Button
                 variant="contained"
-                onClick={onDelete}
+                onClick={() => setConfirmModal(true)}
                 sx={{ marginLeft: 2 }}
               >
                 Delete
@@ -263,6 +296,12 @@ const FileModal = ({ onClose, open, file, tags = [] }: Props) => {
           </form>
         </DialogContent>
       </Dialog>
+      <ConfirmModal
+        open={confirmModal}
+        title="Are you sure to delete this gif?"
+        onClose={() => setConfirmModal(false)}
+        onConfirm={onDelete}
+      />
       <CustomSnackbar
         {...snackBarDetails}
         onClose={() => setSnackBar({ open: false })}

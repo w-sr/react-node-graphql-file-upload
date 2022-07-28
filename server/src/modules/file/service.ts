@@ -1,78 +1,66 @@
 import fs from "fs/promises";
 import { FileUpload } from "graphql-upload";
 import { ObjectId } from "mongodb";
-import { Publisher } from "type-graphql";
 import { Service } from "typedi";
 import { File } from "../../entities";
+import { FileContentType } from "../../entities/file";
 import { makeURL } from "../../utils/common.utils";
 import { singleUpload } from "../../utils/file.utils";
-import {
-  FileContent,
-  FilesPayload,
-  FilterFileInput,
-  ProgressStatus,
-  UpdateFileInput,
-} from "./input";
+import { FilesPayload, FilterFileInput, UpdateFileInput } from "./input";
 import FileModel from "./model";
-import { PubSubSessionPayload } from "./resolver";
 
 @Service()
 export default class FileService {
   constructor(private readonly fileModel: FileModel) {}
 
   public async getById(_id: ObjectId): Promise<File | null> {
-    return this.fileModel.getById(_id);
+    const file = this.fileModel.getById(_id);
+    return file;
+  }
+
+  public async getByPublicUrl(publicUrl: string): Promise<File | null> {
+    const file = this.fileModel.getByPublicUrl(publicUrl);
+    return file;
+  }
+
+  public async getContent(
+    data: string,
+    type: FileContentType
+  ): Promise<string> {
+    if (!Object.values(FileContentType).includes(type)) {
+      throw new Error("Type is not defined!");
+    }
+
+    let file;
+    if (type === "private") {
+      file = await this.getById(new ObjectId(data));
+    } else {
+      file = await this.getByPublicUrl(data);
+    }
+
+    if (!file) throw new Error("File does not existed!");
+    const fileData = await fs.readFile(file.url);
+    const content = JSON.stringify({ blob: fileData.toString("base64") });
+    return content;
   }
 
   public async getAll(
-    data: FilterFileInput,
-    _id: ObjectId
+    query: FilterFileInput,
+    userId: ObjectId
   ): Promise<FilesPayload> {
-    const result = await this.fileModel.getAll(data, _id);
-    return result;
-    // const { total, files } = f;
-    // const ret: FileContent[] = [];
-    // if (total > 0) {
-    //   await Promise.allSettled(files.map((file) => fs.readFile(file.url))).then(
-    //     (results) =>
-    //       results.forEach((result, index) => {
-    //         if ("value" in result) {
-    //           ret.push({
-    //             file: files[index],
-    //             content: result.value,
-    //           });
-    //         }
-    //       })
-    //   );
-    // }
-    // return {
-    //   files: ret,
-    //   total,
-    // };
+    const files = await this.fileModel.getAll(query, userId);
+    return files;
   }
 
-  public async create(
-    data: Promise<FileUpload>[],
-    _id: ObjectId,
-    publish: Publisher<PubSubSessionPayload<ProgressStatus>>
-  ): Promise<number> {
-    let count = 0;
-    for (const result of await Promise.allSettled(
-      // data.map((file) => singleUpload(file, publish))
-      data.map((file) => singleUpload(file))
-    )) {
-      if ("value" in result) {
-        const { name, url } = result.value;
-        const newFile = await this.fileModel.create(name, url, _id);
-        if (newFile) {
-          count++;
-        }
-      } else {
-        console.error(`Failed to store upload: ${result.reason}`);
-      }
+  public async upload(data: Promise<FileUpload>, _id: ObjectId): Promise<File> {
+    try {
+      const result = await singleUpload(data);
+      const { name, url } = result;
+      const newFile = await this.fileModel.create(name, url, _id);
+      return newFile;
+    } catch (error) {
+      throw new Error("File was not uploaded");
     }
-
-    return count;
   }
 
   public async update(
