@@ -27,6 +27,7 @@ const FileUploadStatus = ({ open, files, close }: FileUploadProps) => {
   const [progress, setProgress] = useState<Record<string, number>>({});
   const [message, setMessage] = useState<Record<string, string>>({});
   const [total, setTotal] = useState<number>(0);
+  const [clearVisible, setClearVisible] = useState(false);
   const [uploadFile] = useMutation(UPLOAD_FILE, {
     onCompleted: (res) => {
       if (res.uploadFile) {
@@ -61,30 +62,42 @@ const FileUploadStatus = ({ open, files, close }: FileUploadProps) => {
   });
 
   useEffect(() => {
-    const uploadFiles = async (filteredFiles: File[]) => {
-      for (const file of filteredFiles) {
-        currentFileName.current = file.name;
-        await uploadFile({
-          variables: {
-            input: file,
-          },
-        });
+    const uploadFiles = async () => {
+      for (const file of files) {
+        if (file.size > MAX_FILE_SIZE) {
+          const newMessage = { ...message };
+          newMessage[file.name] = "You can only upload gifs";
+          setMessage(newMessage);
+        } else if (file.type.toLowerCase() !== "image/gif") {
+          const newMessage = { ...message };
+          newMessage[file.name] = "You can upload up to 10 MB";
+          setMessage(newMessage);
+        } else {
+          currentFileName.current = file.name;
+          await uploadFile({
+            variables: {
+              input: file,
+            },
+          });
+        }
       }
     };
     if (open && files.length > 0) {
-      const filteredFiles = files.filter(
-        (file) =>
-          file.size < MAX_FILE_SIZE && file.type.toLowerCase() === "image/gif"
-      );
-      if (filteredFiles.length > 0) {
-        setTotal(filteredFiles.length);
-        uploadFiles(filteredFiles);
-      }
+      setTotal(files.length);
+      uploadFiles();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, files, uploadFile]);
+
+  useEffect(() => {
+    if (total > 0 && Object.values(message).length === total) {
+      setClearVisible(true);
+    }
+  }, [message, total]);
 
   const onClose = () => {
     currentFileName.current = "";
+    setClearVisible(false);
     setMessage({});
     setProgress({});
     close();
@@ -94,8 +107,7 @@ const FileUploadStatus = ({ open, files, close }: FileUploadProps) => {
     if (Object.values(message).length === total) {
       const success = Object.values(message).every((m) => m === UPLOAD_SUCCESS);
       if (success) return "All files successfully uploaded";
-      const error = Object.values(message).some((m) => m === UPLOAD_FAILED);
-      if (error) return "Uploading of some files were failed!";
+      return "Uploading of some files were failed!";
     }
     return "Uploading...";
   };
@@ -155,13 +167,15 @@ const FileUploadStatus = ({ open, files, close }: FileUploadProps) => {
           </Box>
         ))}
       </DialogContent>
-      <DialogActions>
-        <Box mt={5} display="flex" justifyContent="flex-end">
-          <Button onClick={onClose} autoFocus sx={{ marginRight: 2 }}>
-            Clear
-          </Button>
-        </Box>
-      </DialogActions>
+      {clearVisible && (
+        <DialogActions>
+          <Box mt={5} display="flex" justifyContent="flex-end">
+            <Button onClick={onClose} autoFocus sx={{ marginRight: 2 }}>
+              Clear
+            </Button>
+          </Box>
+        </DialogActions>
+      )}
     </Dialog>
   );
 };
