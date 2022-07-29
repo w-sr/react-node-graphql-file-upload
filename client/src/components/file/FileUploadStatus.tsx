@@ -13,6 +13,9 @@ import { GET_FILES } from "../../graphql/queries/files";
 import { Button } from "../common/Button";
 import ProgressBar from "../common/ProgressBar";
 
+const UPLOAD_SUCCESS = "Successfully uploaded!";
+const UPLOAD_FAILED = "Upload failed!";
+
 type FileUploadProps = {
   open: boolean;
   files: File[];
@@ -22,16 +25,14 @@ type FileUploadProps = {
 const FileUploadStatus = ({ open, files, close }: FileUploadProps) => {
   const currentFileName = useRef<string>("");
   const [progress, setProgress] = useState<Record<string, number>>({});
-  const [successMessage, setSuccessMessage] = useState<Record<string, string>>(
-    {}
-  );
-  const [errorMessage, setErrorMessage] = useState<Record<string, string>>({});
+  const [message, setMessage] = useState<Record<string, string>>({});
+  const [total, setTotal] = useState<number>(0);
   const [uploadFile] = useMutation(UPLOAD_FILE, {
     onCompleted: (res) => {
       if (res.uploadFile) {
-        const message = { ...successMessage };
-        message[currentFileName.current] = "Successfully uploaded!";
-        setSuccessMessage(message);
+        const newMessage = { ...message };
+        newMessage[currentFileName.current] = UPLOAD_SUCCESS;
+        setMessage(newMessage);
       }
     },
     refetchQueries: [GET_FILES],
@@ -50,9 +51,9 @@ const FileUploadStatus = ({ open, files, close }: FileUploadProps) => {
       },
     },
     onError: (err) => {
-      const error = { ...errorMessage };
-      error[currentFileName.current] = "Upload failed!";
-      setErrorMessage(error);
+      const newMessage = { ...message };
+      newMessage[currentFileName.current] = UPLOAD_FAILED;
+      setMessage(newMessage);
       const pro = { ...progress };
       pro[currentFileName.current] = 0;
       setProgress(pro);
@@ -76,10 +77,28 @@ const FileUploadStatus = ({ open, files, close }: FileUploadProps) => {
           file.size < MAX_FILE_SIZE && file.type.toLowerCase() === "image/gif"
       );
       if (filteredFiles.length > 0) {
+        setTotal(filteredFiles.length);
         uploadFiles(filteredFiles);
       }
     }
   }, [open, files, uploadFile]);
+
+  const onClose = () => {
+    currentFileName.current = "";
+    setMessage({});
+    setProgress({});
+    close();
+  };
+
+  const renderTitle = () => {
+    if (Object.values(message).length === total) {
+      const success = Object.values(message).every((m) => m === UPLOAD_SUCCESS);
+      if (success) return "All files successfully uploaded";
+      const error = Object.values(message).some((m) => m === UPLOAD_FAILED);
+      if (error) return "Uploading of some files were failed!";
+    }
+    return "Uploading...";
+  };
 
   const renderStatusBar = (file: File) => {
     if (file.type.toLowerCase() !== "image/gif") {
@@ -98,26 +117,18 @@ const FileUploadStatus = ({ open, files, close }: FileUploadProps) => {
     return (
       <Box>
         <ProgressBar value={progress[file.name] ?? 0} />
-        {successMessage[file.name] && (
-          <Box sx={{ fontSize: "0.75rem", color: "green" }}>
-            {successMessage[file.name]}
-          </Box>
-        )}
-        {errorMessage[file.name] && (
-          <Box sx={{ fontSize: "0.75rem", color: "red" }}>
-            {errorMessage[file.name]}
+        {message[file.name] && (
+          <Box
+            sx={{
+              fontSize: "0.75rem",
+              color: message[file.name] === UPLOAD_SUCCESS ? "green" : "red",
+            }}
+          >
+            {message[file.name]}
           </Box>
         )}
       </Box>
     );
-  };
-
-  const onClose = () => {
-    currentFileName.current = "";
-    setErrorMessage({});
-    setSuccessMessage({});
-    setProgress({});
-    close();
   };
 
   return (
@@ -135,7 +146,7 @@ const FileUploadStatus = ({ open, files, close }: FileUploadProps) => {
       maxWidth="xs"
       aria-labelledby="file-upload-dialog"
     >
-      <DialogTitle>Uploading...</DialogTitle>
+      <DialogTitle>{renderTitle()}</DialogTitle>
       <DialogContent>
         {files.map((file: File) => (
           <Box key={file.name} mb={2}>

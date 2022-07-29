@@ -1,5 +1,5 @@
 import { useQuery } from "@apollo/client";
-import { Box, TextField } from "@mui/material";
+import { Box, Skeleton, TextField } from "@mui/material";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import EmptyCard from "../../components/common/EmptyCard";
 import FileCard from "../../components/file/FileCard";
@@ -24,8 +24,12 @@ const Dashboard = () => {
   const [overlayVisible, setOverlayVisible] = useState(false);
   const [snackBarDetails, setSnackBar] = useState<CustomSnackbarProps>({});
 
-  const { data } = useQueryTag();
-  const { data: fileList, refetch } = useQuery(GET_FILES, {
+  const { data: tagsList, loading: tagsLoading } = useQueryTag();
+  const {
+    data: fileList,
+    loading: filesLoading,
+    refetch,
+  } = useQuery(GET_FILES, {
     variables: {
       filters: {
         name: "",
@@ -35,8 +39,9 @@ const Dashboard = () => {
     },
   });
 
-  const tags = data?.map((x: Tag) => x.name);
+  const tags = tagsList?.map((x: Tag) => x.name);
   const rows = fileList?.getFileList.files;
+  const loading = tagsLoading || filesLoading;
 
   const filterChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,14 +101,12 @@ const Dashboard = () => {
   });
 
   return (
-    <Box flexGrow={1} {...getRootProps()} sx={{ position: "relative" }}>
+    <Box flexGrow={1}>
       <Box
         sx={{
-          width: "80%",
-          height: "80%",
-          position: "absolute",
-          top: "10%",
-          right: "10%",
+          width: 1200,
+          height: 120,
+          margin: "40px auto",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -111,6 +114,7 @@ const Dashboard = () => {
           borderStyle: overlayVisible ? "dotted" : "none",
           zIndex: overlayVisible ? 1 : -1,
         }}
+        {...getRootProps()}
       >
         <input {...getInputProps()} />
         <Box display={"flex"} alignItems="center" fontSize={24}>
@@ -138,7 +142,14 @@ const Dashboard = () => {
         }}
         maxWidth={1200}
       >
-        {rows && rows.length > 0 ? (
+        {loading ? (
+          <Box>
+            <Skeleton animation="wave"></Skeleton>
+            <Skeleton animation="wave"></Skeleton>
+            <Skeleton animation="wave"></Skeleton>
+            <Skeleton animation="wave"></Skeleton>
+          </Box>
+        ) : rows && rows.length > 0 ? (
           <Box display="flex" flexDirection={"column"}>
             <Box display="flex" flexWrap={"wrap"}>
               {rows.map((row: FileModel) => (

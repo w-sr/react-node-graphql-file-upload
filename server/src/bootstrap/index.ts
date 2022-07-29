@@ -15,7 +15,7 @@ export default async (config: Config) => {
 
   app.use(server.getMiddleware());
 
-  app.listen({ port: config.port, host: "192.168.10.220" }, () =>
+  app.listen({ port: config.port }, () =>
     console.log(`Server ready at http://localhost:${config.port}${config.path}`)
   );
 };

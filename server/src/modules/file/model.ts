@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb";
 import { Service } from "typedi";
 import { File, FileMongooseModel, TagMongooseModel } from "../../entities";
-import { makeURL } from "../../utils/common.utils";
+import { fileNameValidate, makeURL } from "../../utils/common.utils";
 import { FilesPayload, FilterFileInput, UpdateFileInput } from "./input";
 
 @Service()
@@ -22,6 +22,11 @@ export default class FileModel {
   ): Promise<FilesPayload> {
     const { page, pageSize, name } = query;
 
+    let searchName = name;
+    if (name) {
+      searchName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+
     const files = await FileMongooseModel.aggregate([
       {
         $match: {
@@ -40,8 +45,8 @@ export default class FileModel {
       {
         $match: {
           $or: [
-            { "tags.name": { $regex: new RegExp(name, "i") } },
-            { name: { $regex: new RegExp(name, "i") } },
+            { "tags.name": { $regex: new RegExp(searchName, "i") } },
+            { name: { $regex: new RegExp(searchName, "i") } },
           ],
         },
       },
@@ -99,9 +104,17 @@ export default class FileModel {
       let newIds = [...existingTags.map((e) => e._id)];
 
       /**
-       * Create non existing tags
+       * Create new tags
        */
       if (nonExistingTags.length > 0) {
+        const error = nonExistingTags.some(
+          (tag) => !/^[A-Za-z0-9]*$/.test(tag.name)
+        );
+
+        if (error) {
+          throw new Error("Please input correct tag name");
+        }
+
         const newTags = await TagMongooseModel.create(nonExistingTags);
         newIds = [...newIds, ...newTags.map((x) => x._id)];
       }
@@ -110,7 +123,14 @@ export default class FileModel {
     }
 
     if (name) {
-      query.name = name;
+      const error = fileNameValidate(name);
+      if (error) {
+        throw new Error(error);
+      }
+      query.name = name
+        .substring(0, name.length - 4)
+        .trim()
+        .concat(name.substring(name.length - 4));
     }
 
     if (publicly) {

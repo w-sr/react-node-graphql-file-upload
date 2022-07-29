@@ -15,6 +15,7 @@ import { DELETE_FILE, UPDATE_FILE } from "../../graphql/mutations/files";
 import { GET_FILES } from "../../graphql/queries/files";
 import { GET_TAGS } from "../../graphql/queries/tags";
 import { FileModel } from "../../graphql/types";
+import { fileNameValidate } from "../../utils/helpers";
 import { Button } from "../common/Button";
 import CustomSnackbar, { CustomSnackbarProps } from "../common/Snackbar";
 import ConfirmModal from "../ConfirmModal";
@@ -95,11 +96,22 @@ const FileModal = ({ onClose, open, file, tags = [] }: Props) => {
     initialValues,
     validationSchema: FormSchema,
     onSubmit: async (values) => {
+      const { name } = values;
+      const nameError = fileNameValidate(name);
+      if (nameError) {
+        setFieldError("name", nameError);
+        return;
+      } else {
+        setFieldError("name", "");
+      }
       await updateFile({
         variables: {
           _id: file._id,
           input: {
-            name: values.name,
+            name: name
+              .substring(0, name.length - 4)
+              .trim()
+              .concat(name.substring(name.length - 4)),
             tags: values.tags,
             publicly: false,
           },
@@ -113,7 +125,7 @@ const FileModal = ({ onClose, open, file, tags = [] }: Props) => {
     [file]
   );
 
-  const { values, setFieldValue, touched, errors } = formik;
+  const { values, setFieldValue, touched, errors, setFieldError } = formik;
 
   useEffect(() => {
     if (Object.keys(file).length > 1) {
@@ -185,7 +197,7 @@ const FileModal = ({ onClose, open, file, tags = [] }: Props) => {
                 value={values.name}
                 onChange={(e) => setFieldValue("name", e.target.value)}
                 error={touched.name && Boolean(errors.name)}
-                helperText={errors.name}
+                helperText={touched.name && errors.name}
               />
             </Box>
             <Box my={2}>
@@ -210,10 +222,7 @@ const FileModal = ({ onClose, open, file, tags = [] }: Props) => {
                       onKeyDown: (event) => {
                         if (event.key === "Enter") {
                           const { value } = event.target;
-                          if (
-                            value.trim() === "" ||
-                            !/^[A-Za-z0-9]*$/.test(value)
-                          ) {
+                          if (!/^[A-Za-z0-9]*$/.test(value)) {
                             setError("Please input correct tag name");
                             event.stopPropagation();
                           }
