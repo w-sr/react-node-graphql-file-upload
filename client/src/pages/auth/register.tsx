@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import * as Yup from "yup";
 import { Button } from "../../components/common/Button";
-import { parseErrorMessage } from "../../graphql/helper";
+import { parseErrorMessage } from "../../graphql/helpers";
 import { REGISTER } from "../../graphql/mutations/auth";
 import { StyledLink } from "./styled";
 
@@ -32,7 +32,7 @@ const Register = () => {
       .min(8, "Password should be at least 8 letters"),
   });
 
-  const [registerUser] = useMutation(REGISTER, {
+  const [register] = useMutation(REGISTER, {
     onCompleted: (res) => {
       if (res.register) {
         localStorage.setItem("token", res.register.token);
@@ -49,7 +49,7 @@ const Register = () => {
     validationSchema: FormSchema,
     onSubmit: async (values) => {
       const { name, ...rest } = values;
-      registerUser({
+      register({
         variables: {
           input: {
             ...rest,
@@ -65,10 +65,10 @@ const Register = () => {
   return (
     <Box
       sx={{
-        boxShadow: 3,
         width: 500,
-        margin: "50px auto",
         padding: 3,
+        margin: "50px auto",
+        boxShadow: 3,
       }}
     >
       <Typography variant="h4" component="div" sx={{ marginBottom: 4 }}>

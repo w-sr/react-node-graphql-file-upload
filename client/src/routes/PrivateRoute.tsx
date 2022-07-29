@@ -3,7 +3,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import React from "react";
 import { Navigate } from "react-router-dom";
 import NavBar from "../components/NavBar";
-import { useQueryMe } from "../graphql/quries/me";
+import { useQueryMe } from "../graphql/queries/me";
 import { isAuthenticated } from "../utils/authentication";
 
 interface Props {

@@ -1,3 +1,4 @@
+// funciton to make a public url
 export const makeURL = (length: number) => {
   var result = "";
   var characters =

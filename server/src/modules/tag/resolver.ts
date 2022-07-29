@@ -27,19 +27,15 @@ export default class TagResolver {
 
   @Mutation(() => Tag)
   @Authorized()
-  async createTag(
-    @Arg("createTagData") createTagData: CreateTagInput
-  ): Promise<Tag | null> {
-    const tag = await this.tagService.createTag(createTagData);
+  async createTag(@Arg("input") input: CreateTagInput): Promise<Tag | null> {
+    const tag = await this.tagService.createTag(input);
     return tag;
   }
 
   @Mutation(() => Tag)
   @Authorized()
-  async updateTag(
-    @Arg("updateTagData") updateTagData: UpdateTagInput
-  ): Promise<Tag | null> {
-    const tag = await this.tagService.updateTag(updateTagData);
+  async updateTag(@Arg("input") input: UpdateTagInput): Promise<Tag | null> {
+    const tag = await this.tagService.updateTag(input);
     return tag;
   }
 }

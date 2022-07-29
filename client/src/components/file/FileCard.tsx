@@ -10,8 +10,8 @@ import {
 } from "@mui/material";
 import Card from "@mui/material/Card";
 import { styled } from "@mui/material/styles";
-import { GET_PRIVATE_FILE_CONTENT } from "../graphql/quries/files";
-import { FileModel } from "../graphql/type";
+import { GET_PRIVATE_FILE_CONTENT } from "../../graphql/queries/files";
+import { FileModel } from "../../graphql/types";
 
 type FileCardProps = {
   file: FileModel;
@@ -25,7 +25,7 @@ const StyledTooltip = styled(({ className, ...props }: TooltipProps) => (
     backgroundColor: "pink",
     color: "rgba(0, 0, 0, 0.87)",
     boxShadow: theme.shadows[1],
-    fontSize: 11,
+    fontSize: 14,
   },
 }));
 
@@ -44,8 +44,8 @@ const FileCard = ({ file, edit }: FileCardProps) => {
       sx={{
         maxWidth: 220,
         maxHeight: 300,
-        cursor: "pointer",
         position: "relative",
+        cursor: "pointer",
       }}
       onClick={() => edit(file._id)}
     >
@@ -66,6 +66,8 @@ const FileCard = ({ file, edit }: FileCardProps) => {
         <Box
           sx={{
             width: 200,
+            maxHeight: 128,
+            overflow: "hidden",
             position: "absolute",
             top: 0,
             display: "flex",
@@ -82,13 +84,13 @@ const FileCard = ({ file, edit }: FileCardProps) => {
               <Box
                 sx={{
                   maxWidth: 180,
+                  padding: 1,
+                  margin: 0.5,
                   color: "white",
-                  background: "grey",
+                  background: "#4b5563",
                   textOverflow: "ellipsis",
                   overflow: "hidden",
                   borderRadius: 2,
-                  padding: 1,
-                  margin: 0.5,
                 }}
               >
                 {tag.name}
@@ -102,10 +104,10 @@ const FileCard = ({ file, edit }: FileCardProps) => {
           sx={{
             width: 180,
             height: 32,
+            margin: "16px auto",
+            textAlign: "center",
             textOverflow: "ellipsis",
             overflow: "hidden",
-            textAlign: "center",
-            margin: "16px auto",
           }}
           variant="h5"
         >

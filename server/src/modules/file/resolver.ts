@@ -83,11 +83,4 @@ export default class FileResolver {
     const payload = await this.fileService.delete(new ObjectId(_id));
     return payload;
   }
-
-  @Mutation(() => File)
-  @Authorized()
-  async createPublicUrl(@Arg("_id") _id: string): Promise<File | null> {
-    const payload = await this.fileService.createUrl(new ObjectId(_id)); //Comment
-    return payload;
-  }
 }

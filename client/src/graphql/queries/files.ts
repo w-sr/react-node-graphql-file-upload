@@ -10,7 +10,7 @@ export const GET_FILES = gql`
           _id
           name
         }
-        public
+        publicly
         publicUrl
         url
       }
@@ -25,7 +25,7 @@ export const GET_FILE = gql`
       _id
       name
       tags
-      public
+      publicly
       publicUrl
       url
     }

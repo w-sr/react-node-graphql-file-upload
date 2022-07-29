@@ -14,7 +14,7 @@ const ConfirmModal = ({ open, title, onClose, onConfirm }: ModalProps) => {
       open={open}
       sx={{ "& .MuiDialog-paper": { minWidth: 500 } }}
       maxWidth="xs"
-      aria-labelledby="add-fodd-dialog"
+      aria-labelledby="confirm-dialog"
     >
       <DialogTitle>{title}</DialogTitle>
       <DialogActions>

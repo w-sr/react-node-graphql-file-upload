@@ -26,7 +26,7 @@ export default class TagService {
     const tag = await this.tagModel.getById(_id);
     if (!tag) throw new Error("Tag does not exist!");
     if (tag.name === data.name)
-      throw new Error("Tag with same name is existed");
+      throw new Error("Tag with same name is existed!");
 
     return this.tagModel.update(_id, name);
   }

@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb";
 import { Service } from "typedi";
 import { File, FileMongooseModel, TagMongooseModel } from "../../entities";
+import { makeURL } from "../../utils/common.utils";
 import { FilesPayload, FilterFileInput, UpdateFileInput } from "./input";
 
 @Service()
@@ -69,7 +70,7 @@ export default class FileModel {
     const data = {
       name: filename,
       user: _id,
-      public: false,
+      publicly: false,
       url,
     };
     const createdFile = new FileMongooseModel(data).save();
@@ -77,7 +78,7 @@ export default class FileModel {
   }
 
   async update(_id: ObjectId, data: UpdateFileInput): Promise<File | null> {
-    const { tags, name, publicUrl } = data;
+    const { tags, name, publicly } = data;
 
     const query: Record<string, any> = {};
     if (tags) {
@@ -112,9 +113,12 @@ export default class FileModel {
       query.name = name;
     }
 
-    if (publicUrl) {
-      query.publicUrl = publicUrl;
-      query.public = true;
+    if (publicly) {
+      query.publicUrl = makeURL(32);
+      query.publicly = true;
+    } else {
+      query.publicUrl = null;
+      query.publicly = false;
     }
 
     const updatedFile = await FileMongooseModel.findOneAndUpdate(

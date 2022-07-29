@@ -8,26 +8,28 @@ import {
 } from "@mui/material";
 import { useFormik } from "formik";
 import { useCallback, useEffect, useState } from "react";
-import * as Yup from "yup";
-import { Button } from "../../components/common/Button";
-import CustomSnackbar, { CustomSnackbarProps } from "../../components/Snackbar";
-import { parseErrorMessage } from "../../graphql/helper";
-import {
-  CREATE_PUBLIC_URL,
-  DELETE_FILE,
-  UPDATE_FILE,
-} from "../../graphql/mutations/files";
-import { GET_FILES } from "../../graphql/quries/files";
-import { GET_TAGS } from "../../graphql/quries/tags";
-import { FileModel } from "../../graphql/type";
 import { CopyToClipboard } from "react-copy-to-clipboard";
-import ConfirmModal from "../../components/ConfirmModal";
+import * as Yup from "yup";
+import { parseErrorMessage } from "../../graphql/helpers";
+import { DELETE_FILE, UPDATE_FILE } from "../../graphql/mutations/files";
+import { GET_FILES } from "../../graphql/queries/files";
+import { GET_TAGS } from "../../graphql/queries/tags";
+import { FileModel } from "../../graphql/types";
+import { Button } from "../common/Button";
+import CustomSnackbar, { CustomSnackbarProps } from "../common/Snackbar";
+import ConfirmModal from "../ConfirmModal";
 
 type Props = {
-  onClose: () => void;
   open: boolean;
   file: FileModel;
   tags?: string[];
+  onClose: () => void;
+};
+
+const initialValues = {
+  name: "",
+  tags: [],
+  publicUrl: "",
 };
 
 const FormSchema = Yup.object().shape({
@@ -46,7 +48,6 @@ const FileModal = ({ onClose, open, file, tags = [] }: Props) => {
   const [updateFile] = useMutation(UPDATE_FILE, {
     onCompleted: (res) => {
       if (res.updateFile) {
-        onClose();
         setSnackBar({
           open: true,
           message: "Successfully updated",
@@ -90,34 +91,8 @@ const FileModal = ({ onClose, open, file, tags = [] }: Props) => {
     refetchQueries: [GET_FILES],
   });
 
-  const [createPublicUrl] = useMutation(CREATE_PUBLIC_URL, {
-    onCompleted: (res) => {
-      if (res.createPublicUrl) {
-        setSnackBar({
-          open: true,
-          message: "Successfully created",
-          onClose: () => setSnackBar({}),
-          severity: "success",
-        });
-      }
-    },
-    onError: (err) => {
-      setSnackBar({
-        open: true,
-        message: parseErrorMessage(err),
-        onClose: () => setSnackBar({}),
-        severity: "error",
-      });
-    },
-    refetchQueries: [GET_FILES],
-  });
-
   const formik = useFormik({
-    initialValues: {
-      name: "",
-      tags: [],
-      publicUrl: "",
-    },
+    initialValues,
     validationSchema: FormSchema,
     onSubmit: async (values) => {
       await updateFile({
@@ -126,6 +101,7 @@ const FileModal = ({ onClose, open, file, tags = [] }: Props) => {
           input: {
             name: values.name,
             tags: values.tags,
+            publicly: false,
           },
         },
       });
@@ -150,10 +126,24 @@ const FileModal = ({ onClose, open, file, tags = [] }: Props) => {
     }
   }, [file, setFieldValue, getTags]);
 
-  const createUrl = () => {
-    createPublicUrl({
+  const createUrl = async () => {
+    await updateFile({
       variables: {
         _id: file._id,
+        input: {
+          publicly: true,
+        },
+      },
+    });
+  };
+
+  const makePrivate = async () => {
+    await updateFile({
+      variables: {
+        _id: file._id,
+        input: {
+          publicly: false,
+        },
       },
     });
   };
@@ -220,10 +210,10 @@ const FileModal = ({ onClose, open, file, tags = [] }: Props) => {
                       onKeyDown: (event) => {
                         if (event.key === "Enter") {
                           const { value } = event.target;
-                          if (value.trim() === "") {
-                            setError("Please input correct tag name");
-                            event.stopPropagation();
-                          } else if (!/^[A-Za-z0-9]*$/.test(value)) {
+                          if (
+                            value.trim() === "" ||
+                            !/^[A-Za-z0-9]*$/.test(value)
+                          ) {
                             setError("Please input correct tag name");
                             event.stopPropagation();
                           }
@@ -237,7 +227,7 @@ const FileModal = ({ onClose, open, file, tags = [] }: Props) => {
                 )}
               />
             </Box>
-            {file.public && (
+            {file.publicly && (
               <Box my={2} display="flex" sx={{ position: "relative" }}>
                 <CopyToClipboard
                   text={values.publicUrl}
@@ -263,8 +253,8 @@ const FileModal = ({ onClose, open, file, tags = [] }: Props) => {
                       position: "absolute",
                       top: 20,
                       right: 10,
-                      background: "pink",
                       padding: 2,
+                      background: "pink",
                       borderRadius: 2,
                     }}
                   >
@@ -274,7 +264,11 @@ const FileModal = ({ onClose, open, file, tags = [] }: Props) => {
               </Box>
             )}
             <Box mt={10} display="flex" justifyContent="flex-end">
-              {!file.public && (
+              {file.publicly ? (
+                <Button variant="contained" onClick={makePrivate}>
+                  Make Private
+                </Button>
+              ) : (
                 <Button variant="contained" onClick={createUrl}>
                   Get Public URL
                 </Button>

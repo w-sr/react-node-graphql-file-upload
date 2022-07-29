@@ -7,7 +7,7 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { NavLink, useNavigate } from "react-router-dom";
 import client from "../graphql/ApiClient";
-import { useQueryMe } from "../graphql/quries/me";
+import { useQueryMe } from "../graphql/queries/me";
 import { isAuthenticated } from "../utils/authentication";
 
 type RouterProps = {

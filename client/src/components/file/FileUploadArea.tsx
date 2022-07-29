@@ -5,6 +5,7 @@ import { useDropzone } from "react-dropzone";
 type Props = {
   submit: (files: File[]) => void;
 };
+
 const FileUploadArea = ({ submit }: Props) => {
   const [overlayVisible, setOverlayVisible] = useState(false);
 

@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import * as Yup from "yup";
 import { Button } from "../../components/common/Button";
-import { parseErrorMessage } from "../../graphql/helper";
+import { parseErrorMessage } from "../../graphql/helpers";
 import { LOGIN } from "../../graphql/mutations/auth";
 import { StyledLink } from "./styled";
 
@@ -15,8 +15,9 @@ const initialValues = {
 };
 
 const Login = () => {
-  const [errorMessage, setErrorMessage] = useState<string>("");
   const navigate = useNavigate();
+  const [errorMessage, setErrorMessage] = useState<string>("");
+
   const FormSchema = Yup.object().shape({
     email: Yup.string().email("Invalid Email").required("Email is required"),
     password: Yup.string().required("Password is required"),
@@ -52,10 +53,10 @@ const Login = () => {
   return (
     <Box
       sx={{
-        boxShadow: 2,
         width: 500,
-        margin: "50px auto",
         padding: 3,
+        margin: "50px auto",
+        boxShadow: 2,
       }}
     >
       <Typography variant="h4" component="div" sx={{ marginBottom: 4 }}>

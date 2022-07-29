@@ -15,7 +15,7 @@ export type FileModel = {
   user: string;
   name: string;
   tags: Tag[];
-  public: boolean;
+  publicly: boolean;
   url: string;
   publicUrl: string;
 };

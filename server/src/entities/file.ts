@@ -11,7 +11,7 @@ import { Tag } from "./tag";
 
 export enum FileContentType {
   PRIVATE = "private",
-  PUBLIC = "public",
+  PUBLIC = "publicly",
 }
 
 @modelOptions({
@@ -45,7 +45,7 @@ export class File {
 
   @Field(() => Boolean)
   @prop({ type: () => Boolean, required: true, default: false })
-  public: boolean;
+  publicly: boolean;
 
   @Field(() => ObjectId)
   @prop({ type: () => ObjectId, required: true })

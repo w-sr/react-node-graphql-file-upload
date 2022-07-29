@@ -7,19 +7,19 @@ import {
   DialogTitle,
 } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
-import { UPLOAD_FILE } from "../graphql/mutations/files";
-import { GET_FILES } from "../graphql/quries/files";
-import { MAX_FILE_SIZE } from "../utils/common";
-import { Button } from "./common/Button";
-import ProgressBar from "./ProgressBar";
+import { MAX_FILE_SIZE } from "../../constants";
+import { UPLOAD_FILE } from "../../graphql/mutations/files";
+import { GET_FILES } from "../../graphql/queries/files";
+import { Button } from "../common/Button";
+import ProgressBar from "../common/ProgressBar";
 
 type FileUploadProps = {
-  show: boolean;
+  open: boolean;
   files: File[];
   close: () => void;
 };
 
-const FileUploadStatus = ({ show, files, close }: FileUploadProps) => {
+const FileUploadStatus = ({ open, files, close }: FileUploadProps) => {
   const currentFileName = useRef<string>("");
   const [progress, setProgress] = useState<Record<string, number>>({});
   const [successMessage, setSuccessMessage] = useState<Record<string, string>>(
@@ -70,7 +70,7 @@ const FileUploadStatus = ({ show, files, close }: FileUploadProps) => {
         });
       }
     };
-    if (show && files.length > 0) {
+    if (open && files.length > 0) {
       const filteredFiles = files.filter(
         (file) =>
           file.size < MAX_FILE_SIZE && file.type.toLowerCase() === "image/gif"
@@ -79,7 +79,7 @@ const FileUploadStatus = ({ show, files, close }: FileUploadProps) => {
         uploadFiles(filteredFiles);
       }
     }
-  }, [show, files, uploadFile]);
+  }, [open, files, uploadFile]);
 
   const renderStatusBar = (file: File) => {
     if (file.type.toLowerCase() !== "image/gif") {
@@ -122,7 +122,7 @@ const FileUploadStatus = ({ show, files, close }: FileUploadProps) => {
 
   return (
     <Dialog
-      open={show}
+      open={open}
       sx={{
         "& .MuiDialog-container": {
           alignItems: "flex-end",
@@ -133,7 +133,7 @@ const FileUploadStatus = ({ show, files, close }: FileUploadProps) => {
         sx: { minWidth: 500 },
       }}
       maxWidth="xs"
-      aria-labelledby="add-fodd-dialog"
+      aria-labelledby="file-upload-dialog"
     >
       <DialogTitle>Uploading...</DialogTitle>
       <DialogContent>

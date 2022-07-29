@@ -1,26 +1,28 @@
 import { useQuery } from "@apollo/client";
 import { Box, TextField } from "@mui/material";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import EmptyCard from "../../components/EmptyCard";
-import FileCard from "../../components/FileCard";
-import FileUploadStatus from "../../components/FileUploadStatus";
-import Pagination from "../../components/Pagination";
-import CustomSnackbar, { CustomSnackbarProps } from "../../components/Snackbar";
-import { GET_FILES } from "../../graphql/quries/files";
-import { useQueryTag } from "../../graphql/quries/tags";
-import { FileModel, Tag } from "../../graphql/type";
-import FileModal from "./fileModal";
+import EmptyCard from "../../components/common/EmptyCard";
+import FileCard from "../../components/file/FileCard";
+import FileUploadStatus from "../../components/file/FileUploadStatus";
+import Pagination from "../../components/common/Pagination";
+import CustomSnackbar, {
+  CustomSnackbarProps,
+} from "../../components/common/Snackbar";
+import { GET_FILES } from "../../graphql/queries/files";
+import { useQueryTag } from "../../graphql/queries/tags";
+import { FileModel, Tag } from "../../graphql/types";
+import FileModal from "../../components/file/FileDetailModal";
 import debounce from "lodash.debounce";
 import { useDropzone } from "react-dropzone";
 
 const Dashboard = () => {
+  const [currentId, setCurrentId] = useState<string>("");
   const [files, setFiles] = useState<File[]>([]);
-  const [snackBarDetails, setSnackBar] = useState<CustomSnackbarProps>({});
   const [page, setPage] = useState<number>(0);
   const [pageSize, setPageSize] = useState<number>(10);
   const [filter, setFilter] = useState<string>("");
-  const [currentId, setCurrentId] = useState<string>("");
   const [overlayVisible, setOverlayVisible] = useState(false);
+  const [snackBarDetails, setSnackBar] = useState<CustomSnackbarProps>({});
 
   const { data } = useQueryTag();
   const { data: fileList, refetch } = useQuery(GET_FILES, {
@@ -97,18 +99,18 @@ const Dashboard = () => {
     <Box flexGrow={1} {...getRootProps()} sx={{ position: "relative" }}>
       <Box
         sx={{
+          width: "80%",
+          height: "80%",
           position: "absolute",
           top: "10%",
           right: "10%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           background: overlayVisible ? "rgba(255,255,255,0.7)" : "transparent",
-          width: "80%",
-          height: "80%",
           borderStyle: overlayVisible ? "dotted" : "none",
           zIndex: overlayVisible ? 1 : -1,
         }}
-        display="flex"
-        alignContent={"center"}
-        justifyContent={"center"}
       >
         <input {...getInputProps()} />
         <Box display={"flex"} alignItems="center" fontSize={24}>
@@ -129,10 +131,10 @@ const Dashboard = () => {
       <Box
         sx={{
           flexGrow: 1,
+          padding: 2,
           margin: "40px auto 0",
           background: "white",
           borderRadius: 2,
-          padding: 2,
         }}
         maxWidth={1200}
       >
@@ -171,7 +173,7 @@ const Dashboard = () => {
 
       {/* Upload progress modal */}
       <FileUploadStatus
-        show={files.length > 0}
+        open={files.length > 0}
         files={files}
         close={() => setFiles([])}
       />

@@ -1,5 +1,3 @@
-export const MAX_FILE_SIZE = 10 * 1024 * 1024;
-
 const parseHeaders = (rawHeaders: any) => {
   const headers = new Headers();
   const preProcessedHeaders = rawHeaders.replace(/\r?\n[\t ]+/g, " ");

@@ -13,6 +13,9 @@ export class UpdateFileInput {
 
   @Field(() => String, { nullable: true })
   publicUrl?: string;
+
+  @Field(() => Boolean)
+  publicly: boolean;
 }
 
 @InputType()

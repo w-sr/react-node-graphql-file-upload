@@ -1,5 +1,5 @@
 import { gql, useQuery } from "@apollo/client";
-import { QueryHookResult, User } from "../type";
+import { QueryHookResult, User } from "../types";
 
 export const ME_QUERY = gql`
   query MeQuery {

@@ -9,7 +9,7 @@ export const UPDATE_FILE = gql`
         _id
         name
       }
-      public
+      publicly
       publicUrl
       url
     }
@@ -33,7 +33,7 @@ export const UPLOAD_FILE = gql`
         _id
         name
       }
-      public
+      publicly
       publicUrl
       url
     }
@@ -43,14 +43,6 @@ export const UPLOAD_FILE = gql`
 export const DELETE_FILE = gql`
   mutation DeleteFile($_id: String!) {
     deleteFile(_id: $_id) {
-      _id
-    }
-  }
-`;
-
-export const CREATE_PUBLIC_URL = gql`
-  mutation CreatePublicUrl($_id: String!) {
-    createPublicUrl(_id: $_id) {
       _id
     }
   }

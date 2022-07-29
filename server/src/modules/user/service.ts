@@ -11,6 +11,8 @@ export default class UserService {
   constructor(private readonly userModel: UserModel) {}
 
   public async login(input: LoginInput): Promise<UserPayload | null> {
+    if (!input) throw new Error("Login input was not provided");
+
     const user = await this.userModel.getByEmail(input.email);
     if (!user) throw new Error("User not found!");
 
@@ -24,6 +26,8 @@ export default class UserService {
   }
 
   public async register(input: RegisterInput): Promise<UserPayload> {
+    if (!input) throw new Error("Register input was not provided");
+
     const user = await this.userModel.getByEmail(input.email);
     if (user) throw new Error("User already existed!");
 
@@ -35,6 +39,8 @@ export default class UserService {
   }
 
   public async getById(_id: ObjectId): Promise<User | null> {
+    if (!_id) throw new Error("ID was not provided");
+
     return this.userModel.getById(_id);
   }
 }
