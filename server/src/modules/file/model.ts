@@ -1,6 +1,5 @@
 import { ObjectId } from "mongodb";
 import { Service } from "typedi";
-
 import { File, FileMongooseModel, TagMongooseModel } from "../../entities";
 import { FilesPayload, FilterFileInput, UpdateFileInput } from "./input";
 
@@ -39,7 +38,10 @@ export default class FileModel {
       },
       {
         $match: {
-          $or: [{ "tags.name": { $regex: name } }, { name: { $regex: name } }],
+          $or: [
+            { "tags.name": { $regex: new RegExp(name, "i") } },
+            { name: { $regex: new RegExp(name, "i") } },
+          ],
         },
       },
       {
@@ -56,7 +58,7 @@ export default class FileModel {
           ],
         },
       },
-    ]);
+    ]).exec();
 
     const retTotal = files[0].total.length > 0 ? files[0].total[0].count : 0;
 

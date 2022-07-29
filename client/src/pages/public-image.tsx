@@ -1,17 +1,17 @@
 import { useQuery } from "@apollo/client";
 import { CircularProgress } from "@mui/material";
 import { useParams } from "react-router-dom";
-import { GET_FILE_CONTENT } from "../graphql/quries/files";
+import { GET_PUBLIC_FILE_CONTENT } from "../graphql/quries/files";
 
 const PublicImagePage = () => {
   const { url } = useParams();
-  const { data, loading } = useQuery(GET_FILE_CONTENT, {
+  const { data, loading } = useQuery(GET_PUBLIC_FILE_CONTENT, {
     variables: {
       data: url,
-      type: "public",
     },
   });
-  const imageContent = data && JSON.parse(data.getFileContent.content).blob;
+  const imageContent =
+    data && JSON.parse(data.getPublicFileContent.content).blob;
   return (
     <>
       {loading ? (

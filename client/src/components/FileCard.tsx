@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import Card from "@mui/material/Card";
 import { styled } from "@mui/material/styles";
-import { GET_FILE_CONTENT } from "../graphql/quries/files";
+import { GET_PRIVATE_FILE_CONTENT } from "../graphql/quries/files";
 import { FileModel } from "../graphql/type";
 
 type FileCardProps = {
@@ -30,18 +30,23 @@ const StyledTooltip = styled(({ className, ...props }: TooltipProps) => (
 }));
 
 const FileCard = ({ file, edit }: FileCardProps) => {
-  const { data, loading } = useQuery(GET_FILE_CONTENT, {
+  const { data, loading } = useQuery(GET_PRIVATE_FILE_CONTENT, {
     variables: {
       data: file._id,
-      type: "private",
     },
   });
 
-  const imageContent = data && JSON.parse(data.getFileContent.content).blob;
+  const imageContent =
+    data && JSON.parse(data.getPrivateFileContent.content).blob;
 
   return (
     <Card
-      sx={{ maxWidth: 220, cursor: "pointer", position: "relative" }}
+      sx={{
+        maxWidth: 220,
+        maxHeight: 300,
+        cursor: "pointer",
+        position: "relative",
+      }}
       onClick={() => edit(file._id)}
     >
       <CardContent sx={{ width: 200, height: 200 }}>
@@ -76,7 +81,7 @@ const FileCard = ({ file, edit }: FileCardProps) => {
             >
               <Box
                 sx={{
-                  maxWidth: 40,
+                  maxWidth: 180,
                   color: "white",
                   background: "grey",
                   textOverflow: "ellipsis",
@@ -96,6 +101,7 @@ const FileCard = ({ file, edit }: FileCardProps) => {
         <Typography
           sx={{
             width: 180,
+            height: 32,
             textOverflow: "ellipsis",
             overflow: "hidden",
             textAlign: "center",

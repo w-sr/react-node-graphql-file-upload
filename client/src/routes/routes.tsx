@@ -1,10 +1,10 @@
 import { LinearProgress } from "@mui/material";
-import { Fragment, Suspense } from "react";
+import { Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import Login from "../pages/auth/login";
 import Register from "../pages/auth/register";
-import NotFound from "../pages/not-found";
 import Dashboard from "../pages/dashboard";
+import NotFound from "../pages/not-found";
 import PublicImagePage from "../pages/public-image";
 import PrivateRoute from "./PrivateRoute";
 import PublicRoute from "./PublicRoute";

@@ -1,15 +1,12 @@
 import express from "express";
-import { createServer } from "http";
 
 import { graphqlUploadExpress } from "graphql-upload";
 import { Config } from "../config";
 import loaders from "./loaders";
-// import mongooseLoader from "./loaders/mongoose";
-
-const app = express();
-export const httpServer = createServer(app);
 
 export default async (config: Config) => {
+  const app = express();
+
   const server = await loaders();
 
   await server.start();

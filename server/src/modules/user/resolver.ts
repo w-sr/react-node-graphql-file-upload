@@ -1,9 +1,8 @@
-import { ObjectId } from "mongodb";
 import { Arg, Authorized, Ctx, Mutation, Query, Resolver } from "type-graphql";
 import { Service } from "typedi";
 
 import { User } from "../../entities";
-import { RegisterUserInput, LoginInput, UserPayload } from "./input";
+import { LoginInput, RegisterInput, UserPayload } from "./input";
 import UserService from "./service";
 
 @Service()
@@ -20,19 +19,17 @@ export default class UserResolver {
   }
 
   @Mutation(() => UserPayload)
-  async login(
-    @Arg("loginUserData") loginUserData: LoginInput
-  ): Promise<UserPayload | null> {
-    const user = await this.userService.login(loginUserData);
+  async login(@Arg("input") input: LoginInput): Promise<UserPayload | null> {
+    const user = await this.userService.login(input);
 
     return user;
   }
 
   @Mutation(() => UserPayload)
   async register(
-    @Arg("registerUserData") registerUserData: RegisterUserInput
+    @Arg("input") input: RegisterInput
   ): Promise<UserPayload | null> {
-    const user = await this.userService.register(registerUserData);
+    const user = await this.userService.register(input);
     return user;
   }
 }

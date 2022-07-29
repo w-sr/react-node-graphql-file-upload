@@ -3,7 +3,6 @@ import { Box, TextField } from "@mui/material";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import EmptyCard from "../../components/EmptyCard";
 import FileCard from "../../components/FileCard";
-import FileUploadArea from "../../components/FileUploadArea";
 import FileUploadStatus from "../../components/FileUploadStatus";
 import Pagination from "../../components/Pagination";
 import CustomSnackbar, { CustomSnackbarProps } from "../../components/Snackbar";
@@ -12,6 +11,7 @@ import { useQueryTag } from "../../graphql/quries/tags";
 import { FileModel, Tag } from "../../graphql/type";
 import FileModal from "./fileModal";
 import debounce from "lodash.debounce";
+import { useDropzone } from "react-dropzone";
 
 const Dashboard = () => {
   const [files, setFiles] = useState<File[]>([]);
@@ -20,6 +20,7 @@ const Dashboard = () => {
   const [pageSize, setPageSize] = useState<number>(10);
   const [filter, setFilter] = useState<string>("");
   const [currentId, setCurrentId] = useState<string>("");
+  const [overlayVisible, setOverlayVisible] = useState(false);
 
   const { data } = useQueryTag();
   const { data: fileList, refetch } = useQuery(GET_FILES, {
@@ -42,7 +43,31 @@ const Dashboard = () => {
     []
   );
 
-  const debouncedChange = useMemo(() => debounce(filterChange, 500), []);
+  const debouncedChange = useMemo(
+    () => debounce(filterChange, 500),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
+  const onDrop = (acceptedFiles: File[]) => {
+    uploadFiles(acceptedFiles);
+    setOverlayVisible(false);
+  };
+
+  const onDragEnter = () => {
+    setOverlayVisible(true);
+  };
+
+  const onDragLeave = () => {
+    setOverlayVisible(false);
+  };
+
+  const { getRootProps, getInputProps } = useDropzone({
+    onDrop,
+    onDragEnter,
+    onDragLeave,
+    noClick: true,
+  });
 
   const onEdit = (_id: string) => setCurrentId(_id);
 
@@ -59,6 +84,7 @@ const Dashboard = () => {
         pageSize,
       },
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter, page, pageSize]);
 
   useEffect(() => {
@@ -68,9 +94,27 @@ const Dashboard = () => {
   });
 
   return (
-    <Box flexGrow={1}>
-      {/* File upload area */}
-      <FileUploadArea submit={uploadFiles} />
+    <Box flexGrow={1} {...getRootProps()} sx={{ position: "relative" }}>
+      <Box
+        sx={{
+          position: "absolute",
+          top: "10%",
+          right: "10%",
+          background: overlayVisible ? "rgba(255,255,255,0.7)" : "transparent",
+          width: "80%",
+          height: "80%",
+          borderStyle: overlayVisible ? "dotted" : "none",
+          zIndex: overlayVisible ? 1 : -1,
+        }}
+        display="flex"
+        alignContent={"center"}
+        justifyContent={"center"}
+      >
+        <input {...getInputProps()} />
+        <Box display={"flex"} alignItems="center" fontSize={24}>
+          Drag images to this area to upload.
+        </Box>
+      </Box>
 
       {/* Search area */}
       <Box sx={{ flexGrow: 1, margin: "40px auto" }} maxWidth={1200}>

@@ -164,6 +164,7 @@ const FileModal = ({ onClose, open, file, tags = [] }: Props) => {
         _id: file._id,
       },
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [file]);
 
   const modalClose = () => {
@@ -175,8 +176,7 @@ const FileModal = ({ onClose, open, file, tags = [] }: Props) => {
     <>
       <Dialog
         open={open}
-        sx={{ "& .MuiDialog-paper": { minWidth: 500 } }}
-        maxWidth="sm"
+        sx={{ "& .MuiDialog-paper": { width: 600 } }}
         aria-labelledby="file-dialog"
       >
         <DialogContent>
@@ -273,7 +273,7 @@ const FileModal = ({ onClose, open, file, tags = [] }: Props) => {
                 )}
               </Box>
             )}
-            <Box mt={5} display="flex" justifyContent="flex-end">
+            <Box mt={10} display="flex" justifyContent="flex-end">
               {!file.public && (
                 <Button variant="contained" onClick={createUrl}>
                   Get Public URL

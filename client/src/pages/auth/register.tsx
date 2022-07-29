@@ -21,10 +21,11 @@ const Register = () => {
 
   const FormSchema = Yup.object().shape({
     name: Yup.string()
+      .trim()
       .required("Name is required")
-      .min(2, "Please input valid name")
-      .max(35, "Please input valid name")
-      .matches(/^[a-zA-Z ]*$/, "Only alphabets are allowed for first name"),
+      .min(2, "Please input at minimum 2 letters")
+      .max(35, "Please input at maximum 35 letters")
+      .matches(/^[a-zA-Z ]*$/, "Only alphabets are allowed for name"),
     email: Yup.string().email("Invalid Email").required("Email is required"),
     password: Yup.string()
       .required("Password is required")
@@ -47,10 +48,12 @@ const Register = () => {
     initialValues,
     validationSchema: FormSchema,
     onSubmit: async (values) => {
+      const { name, ...rest } = values;
       registerUser({
         variables: {
-          data: {
-            ...values,
+          input: {
+            ...rest,
+            name: name.trim(),
           },
         },
       });
@@ -69,7 +72,7 @@ const Register = () => {
       }}
     >
       <Typography variant="h4" component="div" sx={{ marginBottom: 4 }}>
-        Register
+        Create A New Account
       </Typography>
       <Box minHeight={30}>
         {errorMessage && (

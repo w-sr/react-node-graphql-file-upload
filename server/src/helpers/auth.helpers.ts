@@ -44,7 +44,6 @@ export const getPayload = (token: string) => {
     const payload = jwt.verify(token, config.salt);
     return { isLoggedIn: true, payload };
   } catch (err) {
-    // Message
     return { isLoggedIn: false };
   }
 };

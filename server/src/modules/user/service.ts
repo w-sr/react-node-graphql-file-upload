@@ -3,33 +3,33 @@ import { Service } from "typedi";
 
 import { User } from "../../entities";
 import { comparePassword, getToken } from "../../helpers/auth.helpers";
-import { LoginInput, RegisterUserInput, UserPayload } from "./input";
+import { LoginInput, RegisterInput, UserPayload } from "./input";
 import UserModel from "./model";
 
 @Service()
 export default class UserService {
   constructor(private readonly userModel: UserModel) {}
 
-  public async login(data: LoginInput): Promise<UserPayload | null> {
-    const user = await this.userModel.getByEmail(data.email);
+  public async login(input: LoginInput): Promise<UserPayload | null> {
+    const user = await this.userModel.getByEmail(input.email);
     if (!user) throw new Error("User not found!");
 
-    const isMatch = await comparePassword(data.password, user?.password);
+    const isMatch = await comparePassword(input.password, user?.password);
     if (!isMatch) throw new Error("Password was not matched!");
 
-    const input = { _id: user._id };
-    const token = getToken(input);
+    const data = { _id: user._id };
+    const token = getToken(data);
 
     return { user, token };
   }
 
-  public async register(data: RegisterUserInput): Promise<UserPayload> {
-    const user = await this.userModel.getByEmail(data.email);
+  public async register(input: RegisterInput): Promise<UserPayload> {
+    const user = await this.userModel.getByEmail(input.email);
     if (user) throw new Error("User already existed!");
 
-    const newUser = await this.userModel.register(data);
-    const input = { _id: newUser._id };
-    const token = getToken(input);
+    const newUser = await this.userModel.register(input);
+    const data = { _id: newUser._id };
+    const token = getToken(data);
 
     return { user: newUser, token };
   }

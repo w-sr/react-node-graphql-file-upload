@@ -20,13 +20,18 @@ type FileUploadProps = {
 };
 
 const FileUploadStatus = ({ show, files, close }: FileUploadProps) => {
-  const currentFile = useRef<string>("");
-  const [current, setCurrent] = useState<string>("");
+  const currentFileName = useRef<string>("");
   const [progress, setProgress] = useState<Record<string, number>>({});
+  const [successMessage, setSuccessMessage] = useState<Record<string, string>>(
+    {}
+  );
+  const [errorMessage, setErrorMessage] = useState<Record<string, string>>({});
   const [uploadFile] = useMutation(UPLOAD_FILE, {
     onCompleted: (res) => {
       if (res.uploadFile) {
-        // setCurrent(current + 1);
+        const message = { ...successMessage };
+        message[currentFileName.current] = "Successfully uploaded!";
+        setSuccessMessage(message);
       }
     },
     refetchQueries: [GET_FILES],
@@ -35,7 +40,8 @@ const FileUploadStatus = ({ show, files, close }: FileUploadProps) => {
         useUpload: true,
         onProgress: (proEvent: ProgressEvent) => {
           const pro = { ...progress };
-          pro[currentFile.current] = (proEvent.loaded * 100) / proEvent.total;
+          pro[currentFileName.current] =
+            (proEvent.loaded * 100) / proEvent.total;
           setProgress(pro);
         },
         onAbortPossible: (abortHandler: any) => {
@@ -43,18 +49,25 @@ const FileUploadStatus = ({ show, files, close }: FileUploadProps) => {
         },
       },
     },
+    onError: (err) => {
+      const error = { ...errorMessage };
+      error[currentFileName.current] = "Upload failed!";
+      setErrorMessage(error);
+      const pro = { ...progress };
+      pro[currentFileName.current] = 0;
+      setProgress(pro);
+    },
   });
 
   useEffect(() => {
-    const upload = async (file: File) => {
-      try {
+    const uploadFiles = async (filteredFiles: File[]) => {
+      for (const file of filteredFiles) {
+        currentFileName.current = file.name;
         await uploadFile({
           variables: {
             input: file,
           },
         });
-      } catch (error) {
-        console.log(error);
       }
     };
     if (show && files.length > 0) {
@@ -63,11 +76,7 @@ const FileUploadStatus = ({ show, files, close }: FileUploadProps) => {
           file.size < MAX_FILE_SIZE && file.type.toLowerCase() === "image/gif"
       );
       if (filteredFiles.length > 0) {
-        for (const file of filteredFiles) {
-          setCurrent(file.name);
-          currentFile.current = file.name;
-          upload(file);
-        }
+        uploadFiles(filteredFiles);
       }
     }
   }, [show, files, uploadFile]);
@@ -86,13 +95,27 @@ const FileUploadStatus = ({ show, files, close }: FileUploadProps) => {
         </Box>
       );
     }
-    return <ProgressBar value={progress[file.name] ?? 0} />;
+    return (
+      <Box>
+        <ProgressBar value={progress[file.name] ?? 0} />
+        {successMessage[file.name] && (
+          <Box sx={{ fontSize: "0.75rem", color: "green" }}>
+            {successMessage[file.name]}
+          </Box>
+        )}
+        {errorMessage[file.name] && (
+          <Box sx={{ fontSize: "0.75rem", color: "red" }}>
+            {errorMessage[file.name]}
+          </Box>
+        )}
+      </Box>
+    );
   };
 
-  // console.log("progress", progress);
-
   const onClose = () => {
-    currentFile.current = "";
+    currentFileName.current = "";
+    setErrorMessage({});
+    setSuccessMessage({});
     setProgress({});
     close();
   };

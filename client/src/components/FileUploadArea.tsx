@@ -41,7 +41,6 @@ const FileUploadArea = ({ submit }: Props) => {
       <Box
         sx={{
           background: overlayVisible ? "grey" : "transparent",
-
           width: "100%",
           height: "100%",
         }}

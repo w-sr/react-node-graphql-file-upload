@@ -12,7 +12,7 @@ export class LoginInput {
 }
 
 @InputType()
-export class RegisterUserInput {
+export class RegisterInput {
   @Field(() => String)
   @Length(1, 50)
   name: string;

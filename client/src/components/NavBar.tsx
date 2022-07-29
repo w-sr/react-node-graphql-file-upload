@@ -43,9 +43,15 @@ const NavBar = () => {
       <AppBar position="static">
         <Toolbar>
           <Box sx={{ flexGrow: 1 }} display="flex" alignItems={"center"}>
-            <Typography variant="h5" component="div" sx={{ marginRight: 3 }}>
-              Gifs Drive
-            </Typography>
+            <NavLink to="/" style={{ textDecoration: "none" }}>
+              <Typography
+                variant="h5"
+                component="div"
+                sx={{ marginRight: 3, color: "white" }}
+              >
+                Gifs Drive
+              </Typography>
+            </NavLink>
           </Box>
 
           <Box display={"flex"} alignItems={"center"}>

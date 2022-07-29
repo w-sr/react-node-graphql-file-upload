@@ -7,7 +7,7 @@ type EmptyCardProps = {
 const EmptyCard = ({ content }: EmptyCardProps) => {
   return (
     <Box
-      height={300}
+      height={600}
       flexGrow={1}
       display="flex"
       alignItems="center"

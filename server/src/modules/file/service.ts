@@ -14,12 +14,12 @@ export default class FileService {
   constructor(private readonly fileModel: FileModel) {}
 
   public async getById(_id: ObjectId): Promise<File | null> {
-    const file = this.fileModel.getById(_id);
+    const file = await this.fileModel.getById(_id);
     return file;
   }
 
   public async getByPublicUrl(publicUrl: string): Promise<File | null> {
-    const file = this.fileModel.getByPublicUrl(publicUrl);
+    const file = await this.fileModel.getByPublicUrl(publicUrl);
     return file;
   }
 

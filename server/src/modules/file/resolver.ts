@@ -26,11 +26,24 @@ export default class FileResolver {
 
   @Query(() => FileContentPayload)
   @Authorized()
-  async getFileContent(
-    @Arg("data") data: string,
-    @Arg("type") type: FileContentType
+  async getPrivateFileContent(
+    @Arg("data") data: string
   ): Promise<FileContentPayload | null> {
-    const payload = await this.fileService.getContent(data, type);
+    const payload = await this.fileService.getContent(
+      data,
+      FileContentType.PRIVATE
+    );
+    return { content: payload };
+  }
+
+  @Query(() => FileContentPayload)
+  async getPublicFileContent(
+    @Arg("data") data: string
+  ): Promise<FileContentPayload | null> {
+    const payload = await this.fileService.getContent(
+      data,
+      FileContentType.PUBLIC
+    );
     return { content: payload };
   }
 
@@ -74,7 +87,7 @@ export default class FileResolver {
   @Mutation(() => File)
   @Authorized()
   async createPublicUrl(@Arg("_id") _id: string): Promise<File | null> {
-    const payload = await this.fileService.createUrl(new ObjectId(_id));
+    const payload = await this.fileService.createUrl(new ObjectId(_id)); //Comment
     return payload;
   }
 }

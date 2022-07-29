@@ -32,9 +32,17 @@ export const GET_FILE = gql`
   }
 `;
 
-export const GET_FILE_CONTENT = gql`
-  query GetFileContent($data: String!, $type: String!) {
-    getFileContent(data: $data, type: $type) {
+export const GET_PRIVATE_FILE_CONTENT = gql`
+  query GetPrivateFileContent($data: String!) {
+    getPrivateFileContent(data: $data) {
+      content
+    }
+  }
+`;
+
+export const GET_PUBLIC_FILE_CONTENT = gql`
+  query GetPublicFileContent($data: String!) {
+    getPublicFileContent(data: $data) {
       content
     }
   }

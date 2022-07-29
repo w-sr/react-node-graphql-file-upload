@@ -38,7 +38,7 @@ const Login = () => {
     onSubmit: async (values) => {
       await login({
         variables: {
-          loginUserData: {
+          input: {
             email: values.email,
             password: values.password,
           },

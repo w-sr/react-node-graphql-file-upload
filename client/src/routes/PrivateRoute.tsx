@@ -14,12 +14,17 @@ interface Props {
 const PrivateRoute: React.FC<Props> = ({ children }) => {
   const { data: user, loading } = useQueryMe();
 
+  if (loading) {
+    return <CircularProgress />;
+  }
+
   if (!isAuthenticated()) {
     return <Navigate to="/login" />;
   }
 
-  if (loading) {
-    return <CircularProgress />;
+  if (!user) {
+    localStorage.removeItem("token");
+    return <Navigate to="/login" />;
   }
 
   return (
