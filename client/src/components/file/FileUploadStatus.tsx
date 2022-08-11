@@ -27,12 +27,18 @@ const FileUploadStatus = ({ open, files, close }: FileUploadProps) => {
   const [progress, setProgress] = useState<Record<string, number>>({});
   const [message, setMessage] = useState<Record<string, string>>({});
   const [total, setTotal] = useState<number>(0);
+  const [rest, setRest] = useState<number>(0);
+  const [successCount, setSuccessCount] = useState<number>(0);
+  const [failedCount, setFailedCount] = useState<number>(0);
+  const [clearVisible, setClearVisible] = useState(false);
+
   const [uploadFile] = useMutation(UPLOAD_FILE, {
     onCompleted: (res) => {
       if (res.uploadFile) {
         const newMessage = { ...message };
         newMessage[currentFileName.current] = UPLOAD_SUCCESS;
         setMessage(newMessage);
+        setSuccessCount(successCount + 1);
       }
     },
     refetchQueries: [GET_FILES],
@@ -57,6 +63,7 @@ const FileUploadStatus = ({ open, files, close }: FileUploadProps) => {
       const pro = { ...progress };
       pro[currentFileName.current] = 0;
       setProgress(pro);
+      setFailedCount(failedCount + 1);
     },
   });
 
@@ -76,28 +83,39 @@ const FileUploadStatus = ({ open, files, close }: FileUploadProps) => {
         (file) =>
           file.size < MAX_FILE_SIZE && file.type.toLowerCase() === "image/gif"
       );
+      setTotal(files.length);
+      setRest(files.length - filteredFiles.length);
       if (filteredFiles.length > 0) {
-        setTotal(filteredFiles.length);
         uploadFiles(filteredFiles);
       }
     }
   }, [open, files, uploadFile]);
 
+  useEffect(() => {
+    if (total > 0 && rest + failedCount + successCount === total) {
+      setClearVisible(true);
+    }
+  }, [rest, failedCount, successCount, total]);
+
   const onClose = () => {
     currentFileName.current = "";
     setMessage({});
     setProgress({});
+    setClearVisible(false);
+    setTotal(0);
+    setFailedCount(0);
+    setSuccessCount(0);
+    setRest(0);
     close();
   };
 
   const renderTitle = () => {
-    if (Object.values(message).length === total) {
-      const success = Object.values(message).every((m) => m === UPLOAD_SUCCESS);
-      if (success) return "All files successfully uploaded";
-      const error = Object.values(message).some((m) => m === UPLOAD_FAILED);
-      if (error) return "Uploading of some files were failed!";
+    if (clearVisible) {
+      if (successCount === total) return "All files successfully uploaded";
+      else return "Uploading of some files were failed!";
+    } else {
+      return "Uploading...";
     }
-    return "Uploading...";
   };
 
   const renderStatusBar = (file: File) => {
@@ -155,13 +173,15 @@ const FileUploadStatus = ({ open, files, close }: FileUploadProps) => {
           </Box>
         ))}
       </DialogContent>
-      <DialogActions>
-        <Box mt={5} display="flex" justifyContent="flex-end">
-          <Button onClick={onClose} autoFocus sx={{ marginRight: 2 }}>
-            Clear
-          </Button>
-        </Box>
-      </DialogActions>
+      {clearVisible && (
+        <DialogActions>
+          <Box mt={5} display="flex" justifyContent="flex-end">
+            <Button onClick={onClose} autoFocus sx={{ marginRight: 2 }}>
+              Clear
+            </Button>
+          </Box>
+        </DialogActions>
+      )}
     </Dialog>
   );
 };
