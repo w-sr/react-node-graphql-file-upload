@@ -62,4 +62,3 @@ npm run start
 
 After running, you can access to http://localhost:4000/graphql
 
-Here is record: https://www.loom.com/share/99f436a2e4344ee388fc0e1a57c9958a
